@@ -35,6 +35,12 @@ security:
   require-ssl: true
   basic:
     enabled: false
+  oauth2:
+    resource:
+      filter-order: 3
+      id: ${oauthResourceId}
+      jwt:
+        keyUri: ${oauthResourceTokenKeyUri}
 
 management:
   security:
