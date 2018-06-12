@@ -642,7 +642,7 @@ public class ReportBuilderServiceTest {
 				.setPublish(false));
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
 				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
-		assertThat(actual, samePropertyValuesAs(expected));
+		ObjectCompare.compare(expected, actual);
 	}
 
 	@Test
@@ -651,8 +651,7 @@ public class ReportBuilderServiceTest {
 				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
 		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
 				new BigDecimal("20.0090"), nowInstant, false);
-
-		assertThat(actual, samePropertyValuesAs(expected));
+		ObjectCompare.compare(expected, actual);
 	}
 
 	@Test
@@ -1340,7 +1339,8 @@ public class ReportBuilderServiceTest {
 											.setNumeric(Double.valueOf("2.0090")))
 									.setDischarge((QuantityWithDisplay) new QuantityWithDisplay()
 											.setUnit("dischargeUnits").setDisplay("20.0090")
-											.setNumeric(Double.valueOf("20.0090")))),
+											.setNumeric(Double.valueOf("20.0090")))
+									.setPublish(false)),
 				new DischargeActivity()
 					.setDischargeSummary(
 							new DischargeSummary().setMeasurementGrade(MeasurementGradeType.Excellent)
@@ -1349,7 +1349,8 @@ public class ReportBuilderServiceTest {
 											.setNumeric(Double.valueOf("2.0090")))
 									.setDischarge((QuantityWithDisplay) new QuantityWithDisplay()
 											.setUnit("dischargeUnits").setDisplay("20.0090")
-											.setNumeric(Double.valueOf("20.0090")))))
+											.setNumeric(Double.valueOf("20.0090")))
+									.setPublish(false)))
 			.collect(Collectors.toCollection(ArrayList::new));
 		return activities;
 	}
