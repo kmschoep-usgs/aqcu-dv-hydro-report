@@ -648,7 +648,7 @@ public class ReportBuilderServiceTest {
 	@Test
 	public void calculateErrorTest() {
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, new Boolean(false));
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
 		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
 				new BigDecimal("20.0090"), nowInstant, false);
 
