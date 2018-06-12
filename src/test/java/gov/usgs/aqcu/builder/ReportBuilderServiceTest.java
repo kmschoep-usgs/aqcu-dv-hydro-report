@@ -638,18 +638,19 @@ public class ReportBuilderServiceTest {
 						.setDisplay("20.0090").setNumeric(Double.valueOf("20.0090")))
 				.setMeanGageHeight((QuantityWithDisplay) new QuantityWithDisplay().setUnit("meanGageHeightUnits")
 						.setDisplay("2.0090").setNumeric(Double.valueOf("2.0090")))
-				.setMeasurementStartTime(nowInstant));
+				.setMeasurementStartTime(nowInstant)
+				.setPublish(false));
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant);
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
 		assertThat(actual, samePropertyValuesAs(expected));
 	}
 
 	@Test
 	public void calculateErrorTest() {
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant);
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
 		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
-				new BigDecimal("20.0090"), nowInstant);
+				new BigDecimal("20.0090"), nowInstant, false);
 
 		assertThat(actual, samePropertyValuesAs(expected));
 	}
