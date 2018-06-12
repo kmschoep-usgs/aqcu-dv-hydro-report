@@ -648,7 +648,7 @@ public class ReportBuilderServiceTest {
 	@Test
 	public void calculateErrorTest() {
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, new Boolean(false));
 		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
 				new BigDecimal("20.0090"), nowInstant, false);
 
@@ -1357,13 +1357,13 @@ public class ReportBuilderServiceTest {
 	protected List<FieldVisitMeasurement> getFieldVisitMeasurements() {
 		return Stream.of(
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null),
+						BigDecimal.valueOf(19.00855), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null),
+						BigDecimal.valueOf(19.60882), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null),
+						BigDecimal.valueOf(19.00855), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null))
+						BigDecimal.valueOf(19.60882), null, false))
 			.collect(Collectors.toList());
 	}
 
