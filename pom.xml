@@ -14,8 +14,8 @@
         <additionalparam>-Xdoclint:none</additionalparam>
         <failOnMissingWebXml>false</failOnMissingWebXml>
         <springfox.version>2.8.0</springfox.version>
-        <aqcu.framework.version>0.0.2-SNAPSHOT</aqcu.framework.version>
         <aquarius.sdk.version>18.5.2</aquarius.sdk.version>
+        <aqcu.framework.version>0.0.2</aqcu.framework.version>
     </properties>
 
     <distributionManagement>
