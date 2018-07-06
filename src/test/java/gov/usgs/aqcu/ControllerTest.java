@@ -109,7 +109,7 @@ public class ControllerTest {
 	@Test
 	public void getRequestingUserTest() {
 		Controller c = new Controller(null, null, null);
-		assertEquals("AQCU User", c.getRequestingUser());
+		assertEquals(Controller.UNKNOWN_USERNAME, c.getRequestingUser());
 	}
 
 }
