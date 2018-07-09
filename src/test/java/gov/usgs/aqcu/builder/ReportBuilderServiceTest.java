@@ -638,20 +638,20 @@ public class ReportBuilderServiceTest {
 						.setDisplay("20.0090").setNumeric(Double.valueOf("20.0090")))
 				.setMeanGageHeight((QuantityWithDisplay) new QuantityWithDisplay().setUnit("meanGageHeightUnits")
 						.setDisplay("2.0090").setNumeric(Double.valueOf("2.0090")))
-				.setMeasurementStartTime(nowInstant));
+				.setMeasurementStartTime(nowInstant)
+				.setPublish(false));
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant);
-		assertThat(actual, samePropertyValuesAs(expected));
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
+		ObjectCompare.compare(expected, actual);
 	}
 
 	@Test
 	public void calculateErrorTest() {
 		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant);
+				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
 		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
-				new BigDecimal("20.0090"), nowInstant);
-
-		assertThat(actual, samePropertyValuesAs(expected));
+				new BigDecimal("20.0090"), nowInstant, false);
+		ObjectCompare.compare(expected, actual);
 	}
 
 	@Test
@@ -1339,7 +1339,8 @@ public class ReportBuilderServiceTest {
 											.setNumeric(Double.valueOf("2.0090")))
 									.setDischarge((QuantityWithDisplay) new QuantityWithDisplay()
 											.setUnit("dischargeUnits").setDisplay("20.0090")
-											.setNumeric(Double.valueOf("20.0090")))),
+											.setNumeric(Double.valueOf("20.0090")))
+									.setPublish(false)),
 				new DischargeActivity()
 					.setDischargeSummary(
 							new DischargeSummary().setMeasurementGrade(MeasurementGradeType.Excellent)
@@ -1348,7 +1349,8 @@ public class ReportBuilderServiceTest {
 											.setNumeric(Double.valueOf("2.0090")))
 									.setDischarge((QuantityWithDisplay) new QuantityWithDisplay()
 											.setUnit("dischargeUnits").setDisplay("20.0090")
-											.setNumeric(Double.valueOf("20.0090")))))
+											.setNumeric(Double.valueOf("20.0090")))
+									.setPublish(false)))
 			.collect(Collectors.toCollection(ArrayList::new));
 		return activities;
 	}
@@ -1356,13 +1358,13 @@ public class ReportBuilderServiceTest {
 	protected List<FieldVisitMeasurement> getFieldVisitMeasurements() {
 		return Stream.of(
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null),
+						BigDecimal.valueOf(19.00855), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null),
+						BigDecimal.valueOf(19.60882), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null),
+						BigDecimal.valueOf(19.00855), null, false),
 				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null))
+						BigDecimal.valueOf(19.60882), null, false))
 			.collect(Collectors.toList());
 	}
 

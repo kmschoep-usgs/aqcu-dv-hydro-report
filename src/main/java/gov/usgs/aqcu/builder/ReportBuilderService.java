@@ -332,20 +332,21 @@ public class ReportBuilderService {
 
 		FieldVisitMeasurement fieldVisitMeasurement = calculateError(grade, dischargeSummary.getMeasurementId(),
 				DoubleWithDisplayUtil.getRoundedValue(dischargeSummary.getDischarge()),
-				dischargeSummary.getMeasurementStartTime());
+				dischargeSummary.getMeasurementStartTime(),
+				dischargeSummary.isPublish());
 
 		return fieldVisitMeasurement;
 	}
 
 	protected FieldVisitMeasurement calculateError(MeasurementGrade grade, String measurementNumber,
-			BigDecimal dischargeValue, Instant dateTime) {
+			BigDecimal dischargeValue, Instant dateTime, Boolean publish) {
 
 		BigDecimal errorAmt = dischargeValue.multiply(grade.getPercentageOfError());
 		BigDecimal errorMaxDischargeInFeet = dischargeValue.add(errorAmt);
 		BigDecimal errorMinDischargeInFeet = dischargeValue.subtract(errorAmt);
 
 		FieldVisitMeasurement ret = new FieldVisitMeasurement(measurementNumber, dischargeValue,
-				errorMaxDischargeInFeet, errorMinDischargeInFeet, dateTime);
+				errorMaxDischargeInFeet, errorMinDischargeInFeet, dateTime, publish);
 
 		return ret;
 	}
