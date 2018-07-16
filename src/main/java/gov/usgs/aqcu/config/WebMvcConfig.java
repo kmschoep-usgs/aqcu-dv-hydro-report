@@ -75,10 +75,10 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
 	}
 
 	@Bean
-    public RequestInterceptor requestTokenBearerInterceptor() {
-        return new RequestInterceptor() {
-            @Override
-            public void apply(RequestTemplate requestTemplate) {
+	public RequestInterceptor requestTokenBearerInterceptor() {
+		return new RequestInterceptor() {
+			@Override
+			public void apply(RequestTemplate requestTemplate) {
 				LOG.debug("Interceptor hit..");
 				ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 				if (requestAttributes == null) {
@@ -97,7 +97,7 @@ public class WebMvcConfig extends WebMvcConfigurerAdapter {
 					return;
 				}
 				requestTemplate.header(HttpHeaders.AUTHORIZATION, auth);
-            }
-        };
-    }
+			}
+		};
+	}
 }
