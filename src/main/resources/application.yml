@@ -69,6 +69,9 @@ hystrix:
       queueSizeRejectionThreshold: ${hystrixMaxQueueSize:200}
       coreSize: ${hystrixThreadPoolSize:10}
 
+zuul:
+  sensitiveHeaders: 
+
 spring:
   profiles:
     active: default, swagger
