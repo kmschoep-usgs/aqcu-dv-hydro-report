@@ -4,15 +4,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.security.oauth2.client.feign.OAuth2FeignRequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 
 import feign.RequestInterceptor;
+import feign.RequestTemplate;
 
 @Configuration
 @EnableResourceServer
@@ -43,7 +48,16 @@ public class OAuth2ResourceServerConfig extends ResourceServerConfigurerAdapter 
 	}
 
 	@Bean
-	public RequestInterceptor oauth2FeignRequestInterceptor(OAuth2ClientContext oauth2ClientContext, OAuth2ProtectedResourceDetails resource){
-		return new OAuth2FeignRequestInterceptor(oauth2ClientContext, resource);
-	}
+    public RequestInterceptor requestTokenBearerInterceptor() {
+        return new RequestInterceptor() {
+            @Override
+            public void apply(RequestTemplate requestTemplate) {
+				Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+				if (null != authentication && !(authentication instanceof AnonymousAuthenticationToken)) {
+					OAuth2AuthenticationDetails details = (OAuth2AuthenticationDetails) authentication.getDetails();
+                	requestTemplate.header("Authorization", "bearer " + details.getTokenValue());
+				}                
+            }
+        };
+    }
 }
