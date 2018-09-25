@@ -149,7 +149,7 @@ public class ReportBuilderServiceTest {
 		given(fieldVisitDescriptionService.getDescriptions(anyString(), any(ZoneOffset.class), any(DvHydrographRequestParameters.class)))
 			.willReturn(getFieldVisitDecriptions());
 
-		DvHydrographReport actual = service.buildReport(buildRequestParameters(), "requestingUser");
+		DvHydrographReport actual = service.buildReport(buildRequestParameters(), "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedDvHydrographReport(), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -189,7 +189,7 @@ public class ReportBuilderServiceTest {
 		requestParameters.setEndDate(REPORT_END_DATE);
 		requestParameters.setExcludeDiscrete(true);
 
-		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser");
+		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedGwDvHydrographReport(true), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -231,7 +231,7 @@ public class ReportBuilderServiceTest {
 		requestParameters.setEndDate(REPORT_END_DATE);
 		requestParameters.setExcludeDiscrete(false);
 
-		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser");
+		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedGwDvHydrographReport(false), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -271,7 +271,7 @@ public class ReportBuilderServiceTest {
 		requestParameters.setEndDate(REPORT_END_DATE);
 		requestParameters.setExcludeDiscrete(true);
 
-		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser");
+		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedWqDvHydrographReport(true, false), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -323,7 +323,7 @@ public class ReportBuilderServiceTest {
 		requestParameters.setEndDate(REPORT_END_DATE);
 		requestParameters.setExcludeDiscrete(false);
 
-		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser");
+		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedWqDvHydrographReport(false, false), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -375,7 +375,7 @@ public class ReportBuilderServiceTest {
 		requestParameters.setEndDate(REPORT_END_DATE);
 		requestParameters.setExcludeDiscrete(false);
 
-		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser");
+		DvHydrographReport actual = service.buildReport(requestParameters, "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedWqDvHydrographReport(false, true), actual);
 
 		verify(parameterListService).getParameterMetadata();
@@ -502,7 +502,7 @@ public class ReportBuilderServiceTest {
 		GroundWaterParameter gwParam = GroundWaterParameter.FWat_LVL_BLSD;
 		DvHydrographReportMetadata actual = service.createDvHydroMetadata(buildRequestParameters(),
 				buildTimeSeriesDescriptions(), buildPrimarySeriesDescription(), primarySeriesDataResponse, "testUser",
-				gwParam);
+				gwParam, "DV Hydrograph");
 
 		assertThat(actual, samePropertyValuesAs(buildFirstExpectedDvHydroMetadata()));
 	}
@@ -518,7 +518,7 @@ public class ReportBuilderServiceTest {
 		GroundWaterParameter gwParam = GroundWaterParameter.AQ209;
 		DvHydrographReportMetadata actual = service.createDvHydroMetadata(buildRequestParameters(),
 				buildTimeSeriesDescriptions(), buildPrimarySeriesDescription(), primarySeriesDataResponse, "testUser",
-				gwParam);
+				gwParam, "DV Hydrograph");
 
 		DvHydrographReportMetadata expected = buildFirstExpectedDvHydroMetadata();
 		expected.setInverted(false);
@@ -541,7 +541,7 @@ public class ReportBuilderServiceTest {
 		DvHydrographReportMetadata actual = service.createDvHydroMetadata(requestParmeters,
 				buildTimeSeriesDescriptionsII(), buildPrimarySeriesDescription().setUtcOffset(Double.valueOf(4)),
 						primarySeriesDataResponse, "testUser",
-				gwParam);
+				gwParam, "DV Hydrograph");
 
 		assertThat(actual, samePropertyValuesAs(buildThirdExpectedDvHydroMetadata()));
 	}
