@@ -21,7 +21,7 @@ public class OAuth2ResourceServerConfig extends ResourceServerConfigurerAdapter 
 			.authorizeRequests()
 				.antMatchers("/", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/v2/**").permitAll()
 				.antMatchers("/health/**", "/info/**").permitAll()
-				.anyRequest().permitAll()
+				.anyRequest().fullyAuthenticated()
 			.and()
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 			.and()
