@@ -22,14 +22,14 @@ import gov.usgs.aqcu.parameter.DvHydrographRequestParameters;
 
 @RestController
 @RequestMapping("/dvhydro")
-public class Controller {
+public class DVHydroController {
 	public static final String UNKNOWN_USERNAME = "unknown";
 	private Gson gson;
 	private ReportBuilderService reportBuilderService;
 	private JavaToRClient javaToRClient;
 
 	@Autowired
-	public Controller(
+	public DVHydroController(
 			ReportBuilderService reportBuilderService,
 			JavaToRClient javaToRClient,
 			Gson gson) {
@@ -41,14 +41,14 @@ public class Controller {
 	@GetMapping(produces={MediaType.TEXT_HTML_VALUE})
 	public ResponseEntity<?> getReport(@Validated DvHydrographRequestParameters requestParameters) {
 		String requestingUser = getRequestingUser();
-		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, requestingUser);
+		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, requestingUser, "DV Hydrograph");
 		byte[] reportHtml = javaToRClient.render(requestingUser, "dvhydrograph", gson.toJson(report, DvHydrographReport.class));
 		return new ResponseEntity<byte[]>(reportHtml, new HttpHeaders(), HttpStatus.OK);
 	}
 
 	@GetMapping(value="/rawData", produces={MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<DvHydrographReport> getReportRawData(@Validated DvHydrographRequestParameters requestParameters) {
-		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, getRequestingUser());
+		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, getRequestingUser(), "DV Hydrograph");
 		return new ResponseEntity<DvHydrographReport>(report, new HttpHeaders(), HttpStatus.OK);
 	}
 

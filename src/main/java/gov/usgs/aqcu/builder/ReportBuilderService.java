@@ -90,7 +90,7 @@ public class ReportBuilderService {
 		this.timeSeriesDescriptionService = timeSeriesDescriptionService;
 	}
 
-	public DvHydrographReport buildReport(DvHydrographRequestParameters requestParameters, String requestingUser) {
+	public DvHydrographReport buildReport(DvHydrographRequestParameters requestParameters, String requestingUser, String title) {
 		DvHydrographReport dvHydroReport = new DvHydrographReport();
 
 		Map<String, TimeSeriesDescription> timeSeriesDescriptions = timeSeriesDescriptionService
@@ -108,7 +108,7 @@ public class ReportBuilderService {
 				primarySeriesZoneOffset);
 
 		dvHydroReport.setReportMetadata(createDvHydroMetadata(requestParameters, timeSeriesDescriptions,
-				primarySeriesDescription, primarySeriesDataResponse, requestingUser, primarySeriesGwParam));
+				primarySeriesDescription, primarySeriesDataResponse, requestingUser, primarySeriesGwParam, title));
 
 		dvHydroReport.setPrimarySeriesQualifiers(primarySeriesDataResponse.getQualifiers());
 		dvHydroReport.setPrimarySeriesApprovals(primarySeriesDataResponse.getApprovals());
@@ -224,7 +224,7 @@ public class ReportBuilderService {
 			Map<String, TimeSeriesDescription> timeSeriesDescriptions,
 			TimeSeriesDescription primarySeriesDescription,
 			TimeSeriesDataServiceResponse primarySeriesDataResponse, String requestingUser,
-			GroundWaterParameter gwParam) {
+			GroundWaterParameter gwParam, String title) {
 		DvHydrographReportMetadata metadata = new DvHydrographReportMetadata();
 
 		metadata.setExcludeDiscrete(requestParameters.isExcludeDiscrete());
@@ -237,7 +237,7 @@ public class ReportBuilderService {
 		// by this.
 		metadata.setStartDate(requestParameters.getStartInstant(ZoneOffset.UTC));
 		metadata.setEndDate(requestParameters.getEndInstant(ZoneOffset.UTC));
-		metadata.setTitle("DV Hydrograph");
+		metadata.setTitle(title);
 
 		metadata.setPrimarySeriesLabel(primarySeriesDescription.getIdentifier());
 

@@ -28,12 +28,12 @@ import org.springframework.util.FileCopyUtils;
 import gov.usgs.aqcu.builder.ReportBuilderService;
 import gov.usgs.aqcu.client.JavaToRClient;
 import gov.usgs.aqcu.model.DvHydrographReport;
-import gov.usgs.aqcu.parameter.DvHydrographRequestParameters;
+import gov.usgs.aqcu.parameter.FiveYearRequestParameters;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(Controller.class)
+@WebMvcTest(FiveYearController.class)
 @AutoConfigureMockMvc(secure=false)
-public class ControllerTest {
+public class FiveYearControllerTest {
 
 	@Autowired
 	private MockMvc mvc;
@@ -48,29 +48,29 @@ public class ControllerTest {
 	public void getReportHappyPathTest() throws Exception {
 		DvHydrographReport reportPojo = new DvHydrographReport();
 		String reportHtml = "xxx";
-		given(service.buildReport(any(DvHydrographRequestParameters.class), anyString())).willReturn(reportPojo);
+		given(service.buildReport(any(FiveYearRequestParameters.class), anyString(), anyString())).willReturn(reportPojo);
 		given(client.render(anyString(), anyString(), anyString())).willReturn(reportHtml.getBytes());
 
-		mvc.perform(get("/dvhydro?primaryTimeseriesIdentifier=a&lastMonths=2&firstStatDerivedIdentifier=aa"))
+		mvc.perform(get("/fiveyeargwsum?primaryTimeseriesIdentifier=a&lastMonths=2&firstStatDerivedIdentifier=aa"))
 			.andExpect(status().isOk())
 			.andExpect(content().string(reportHtml))
 		;
 
-		verify(service).buildReport(any(DvHydrographRequestParameters.class), anyString());
+		verify(service).buildReport(any(FiveYearRequestParameters.class), anyString(), anyString());
 		verify(client).render(anyString(), anyString(), anyString());
 	}
 
 	@Test
 	public void getJsonHappyPathTest() throws Exception {
 		DvHydrographReport reportPojo = new DvHydrographReport();
-		given(service.buildReport(any(DvHydrographRequestParameters.class), anyString())).willReturn(reportPojo);
+		given(service.buildReport(any(FiveYearRequestParameters.class), anyString(), anyString())).willReturn(reportPojo);
 
-		MvcResult result = mvc.perform(get("/dvhydro/rawData?primaryTimeseriesIdentifier=a&lastMonths=2&firstStatDerivedIdentifier=aa"))
+		MvcResult result = mvc.perform(get("/fiveyeargwsum/rawData?primaryTimeseriesIdentifier=a&lastMonths=2&firstStatDerivedIdentifier=aa"))
 			.andExpect(status().isOk())
 			.andReturn()
 		;
 
-		verify(service).buildReport(any(DvHydrographRequestParameters.class), anyString());
+		verify(service).buildReport(any(FiveYearRequestParameters.class), anyString(), anyString());
 
 		String expectedJson = new String(FileCopyUtils.copyToByteArray(new ClassPathResource("testResult/skeletor.json").getInputStream()));
 		assertThat(new JSONObject(result.getResponse().getContentAsString()),
@@ -81,35 +81,35 @@ public class ControllerTest {
 	public void getReportSadPathTest() throws Exception {
 		DvHydrographReport reportPojo = new DvHydrographReport();
 		String reportHtml = "xxx";
-		given(service.buildReport(any(DvHydrographRequestParameters.class), anyString())).willReturn(reportPojo);
+		given(service.buildReport(any(FiveYearRequestParameters.class), anyString(), anyString())).willReturn(reportPojo);
 		given(client.render(anyString(), anyString(), anyString())).willReturn(reportHtml.getBytes());
 
-		mvc.perform(get("/dvhydro?lastMonths=2&firstStatDerivedIdentifier=aa"))
+		mvc.perform(get("/fiveyeargwsum?lastMonths=2&firstStatDerivedIdentifier=aa"))
 			.andExpect(status().isBadRequest())
 			.andExpect(content().string(""))
 		;
 
-		verify(service, never()).buildReport(any(DvHydrographRequestParameters.class), anyString());
+		verify(service, never()).buildReport(any(FiveYearRequestParameters.class), anyString(), anyString());
 		verify(client, never()).render(anyString(), anyString(), anyString());
 	}
 
 	@Test
 	public void getJsonSadPathTest() throws Exception {
 		DvHydrographReport reportPojo = new DvHydrographReport();
-		given(service.buildReport(any(DvHydrographRequestParameters.class), anyString())).willReturn(reportPojo);
+		given(service.buildReport(any(FiveYearRequestParameters.class), anyString(), anyString())).willReturn(reportPojo);
 
-		mvc.perform(get("/dvhydro/rawData?lastMonths=2&firstStatDerivedIdentifier=aa"))
+		mvc.perform(get("/fiveyeargwsum/rawData?lastMonths=2&firstStatDerivedIdentifier=aa"))
 			.andExpect(status().isBadRequest())
 			.andExpect(content().string(""))
 		;
 
-		verify(service, never()).buildReport(any(DvHydrographRequestParameters.class), anyString());
+		verify(service, never()).buildReport(any(FiveYearRequestParameters.class), anyString(), anyString());
 	}
 
 	@Test
 	public void getRequestingUserTest() {
-		Controller c = new Controller(null, null, null);
-		assertEquals(Controller.UNKNOWN_USERNAME, c.getRequestingUser());
+		DVHydroController c = new DVHydroController(null, null, null);
+		assertEquals(DVHydroController.UNKNOWN_USERNAME, c.getRequestingUser());
 	}
 
 }
