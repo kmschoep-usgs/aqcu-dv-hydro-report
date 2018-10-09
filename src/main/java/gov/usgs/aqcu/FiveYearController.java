@@ -42,7 +42,7 @@ public class FiveYearController {
 	public ResponseEntity<?> getReport(@Validated FiveYearRequestParameters requestParameters) {
 		String requestingUser = getRequestingUser();
 		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, requestingUser, "Five Year GW Summary");
-		byte[] reportHtml = javaToRClient.render(requestingUser, "dvhydrograph", gson.toJson(report, DvHydrographReport.class));
+		byte[] reportHtml = javaToRClient.render(requestingUser, "fiveyeargwsum", gson.toJson(report, DvHydrographReport.class));
 		return new ResponseEntity<byte[]>(reportHtml, new HttpHeaders(), HttpStatus.OK);
 	}
 
