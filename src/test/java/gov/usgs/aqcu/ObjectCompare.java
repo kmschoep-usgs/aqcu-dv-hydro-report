@@ -12,9 +12,7 @@ import org.json.JSONObject;
 
 import com.google.gson.Gson;
 
-import gov.usgs.aqcu.serializer.SwaggerGsonSerializer;
 import gov.usgs.aqcu.util.AqcuGsonBuilderFactory;
-import springfox.documentation.spring.web.json.Json;
 
 public final class ObjectCompare {
 
@@ -22,7 +20,6 @@ public final class ObjectCompare {
 
 	public static void compare(final Object expectedObject, final Object actualObject) {
 		Gson gson = AqcuGsonBuilderFactory.getConfiguredGsonBuilder()
-				.registerTypeAdapter(Json.class, new SwaggerGsonSerializer())
 				.serializeNulls()
 				.create();
 		try {
@@ -35,7 +32,6 @@ public final class ObjectCompare {
 
 	public static void compare(final List<?> expectedObject, final List<?> actualObject) {
 		Gson gson = AqcuGsonBuilderFactory.getConfiguredGsonBuilder()
-				.registerTypeAdapter(Json.class, new SwaggerGsonSerializer())
 				.serializeNulls()
 				.create();
 		try {

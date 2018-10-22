@@ -43,7 +43,7 @@ import gov.usgs.aqcu.retrieval.LocationDescriptionListService;
 import gov.usgs.aqcu.retrieval.NwisRaService;
 import gov.usgs.aqcu.retrieval.ParameterListService;
 import gov.usgs.aqcu.retrieval.QualifierLookupService;
-import gov.usgs.aqcu.retrieval.TimeSeriesDataCorrectedService;
+import gov.usgs.aqcu.retrieval.TimeSeriesDataService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
 import gov.usgs.aqcu.util.AqcuTimeUtils;
 import gov.usgs.aqcu.util.BigDecimalSummaryStatistics;
@@ -64,7 +64,7 @@ public class ReportBuilderService {
 	private NwisRaService nwisRaService;
 	private ParameterListService parameterListService;
 	private QualifierLookupService qualifierLookupService;
-	private TimeSeriesDataCorrectedService timeSeriesDataCorrectedService;
+	private TimeSeriesDataService timeSeriesDataService;
 	private TimeSeriesDescriptionService timeSeriesDescriptionService;
 
 	@Value("${sims.base.url}")
@@ -77,7 +77,7 @@ public class ReportBuilderService {
 			FieldVisitDataService fieldVisitDataService, FieldVisitDescriptionService fieldVisitDescriptionService,
 			LocationDescriptionListService locationDescriptionListService, NwisRaService nwisRaService,
 			ParameterListService parameterListService, QualifierLookupService qualifierLookupService,
-			TimeSeriesDataCorrectedService timeSeriesDataCorrectedService,
+			TimeSeriesDataService timeSeriesDataService,
 			TimeSeriesDescriptionService timeSeriesDescriptionService) {
 		this.dataGapListBuilderService = dataGapListBuilderService;
 		this.fieldVisitDataService = fieldVisitDataService;
@@ -86,7 +86,7 @@ public class ReportBuilderService {
 		this.nwisRaService = nwisRaService;
 		this.parameterListService = parameterListService;
 		this.qualifierLookupService = qualifierLookupService;
-		this.timeSeriesDataCorrectedService = timeSeriesDataCorrectedService;
+		this.timeSeriesDataService = timeSeriesDataService;
 		this.timeSeriesDescriptionService = timeSeriesDescriptionService;
 	}
 
@@ -102,8 +102,8 @@ public class ReportBuilderService {
 		String primarySeriesParameter = primarySeriesDescription.getParameter().toString();
 		GroundWaterParameter primarySeriesGwParam = GroundWaterParameter.getByDisplayName(primarySeriesParameter);
 
-		TimeSeriesDataServiceResponse primarySeriesDataResponse = timeSeriesDataCorrectedService.get(
-				requestParameters.getPrimaryTimeseriesIdentifier(), requestParameters,
+		TimeSeriesDataServiceResponse primarySeriesDataResponse = timeSeriesDataService.get(
+				requestParameters.getPrimaryTimeseriesIdentifier(), requestParameters, false,
 				TimeSeriesUtils.isDailyTimeSeries(primarySeriesDescription),
 				primarySeriesZoneOffset);
 
@@ -163,7 +163,7 @@ public class ReportBuilderService {
 		if (primarySeriesGwParam != null) {
 			if (!requestParameters.isExcludeDiscrete()) {
 				dvHydroReport.setGwlevel(nwisRaService.getGwLevels(requestParameters,
-						dvHydroReport.getReportMetadata().getStationId(), primarySeriesGwParam, primarySeriesZoneOffset));
+						dvHydroReport.getReportMetadata().getStationId(), primarySeriesGwParam, primarySeriesZoneOffset).getRecords());
 			}
 		} else if (DISCHARGE_PARAMETER.contentEquals(primarySeriesParameter)) {
 			dvHydroReport.setFieldVisitMeasurements(buildFieldVisitMeasurements(requestParameters,
@@ -208,8 +208,8 @@ public class ReportBuilderService {
 		if (timeSeriesDescriptions != null && timeSeriesDescriptions.containsKey(timeSeriesIdentifier)) {
 			boolean isDaily = TimeSeriesUtils.isDailyTimeSeries(timeSeriesDescriptions.get(timeSeriesIdentifier));
 			ZoneOffset zoneOffset = TimeSeriesUtils.getZoneOffset(timeSeriesDescriptions.get(timeSeriesIdentifier));
-			TimeSeriesDataServiceResponse timeSeriesDataServiceResponse = timeSeriesDataCorrectedService
-					.get(timeSeriesIdentifier, requestParameters, isDaily, zoneOffset);
+			TimeSeriesDataServiceResponse timeSeriesDataServiceResponse = timeSeriesDataService
+					.get(timeSeriesIdentifier, requestParameters, false, isDaily, zoneOffset);
 
 			if (timeSeriesDataServiceResponse != null) {
 				timeSeriesCorrectedData = createTimeSeriesCorrectedData(timeSeriesDataServiceResponse, isDaily,

@@ -70,9 +70,10 @@ import gov.usgs.aqcu.model.MeasurementGrade;
 import gov.usgs.aqcu.model.MinMaxData;
 import gov.usgs.aqcu.model.MinMaxPoint;
 import gov.usgs.aqcu.model.TimeSeriesCorrectedData;
-import gov.usgs.aqcu.model.WaterLevelRecord;
-import gov.usgs.aqcu.model.WaterQualitySampleRecord;
-import gov.usgs.aqcu.model.WqValue;
+import gov.usgs.aqcu.model.nwis.WaterLevelRecord;
+import gov.usgs.aqcu.model.nwis.WaterLevelRecords;
+import gov.usgs.aqcu.model.nwis.WaterQualitySampleRecord;
+import gov.usgs.aqcu.model.nwis.WqValue;
 import gov.usgs.aqcu.model.nwis.GroundWaterParameter;
 import gov.usgs.aqcu.model.nwis.ParameterRecord;
 import gov.usgs.aqcu.parameter.DvHydrographRequestParameters;
@@ -82,7 +83,7 @@ import gov.usgs.aqcu.retrieval.LocationDescriptionListService;
 import gov.usgs.aqcu.retrieval.NwisRaService;
 import gov.usgs.aqcu.retrieval.ParameterListService;
 import gov.usgs.aqcu.retrieval.QualifierLookupService;
-import gov.usgs.aqcu.retrieval.TimeSeriesDataCorrectedService;
+import gov.usgs.aqcu.retrieval.TimeSeriesDataService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
 
 @RunWith(SpringRunner.class)
@@ -111,7 +112,7 @@ public class ReportBuilderServiceTest {
 	@MockBean
 	private QualifierLookupService qualifierLookupService;
 	@MockBean
-	private TimeSeriesDataCorrectedService timeSeriesDataCorrectedService;
+	private TimeSeriesDataService timeSeriesDataService;
 	@MockBean
 	private TimeSeriesDescriptionService timeSeriesDescriptionService;
 
@@ -124,7 +125,7 @@ public class ReportBuilderServiceTest {
 	public void setup() {
 		service = new ReportBuilderService(dataGapListBuilderService, fieldVisitDataService,
 				fieldVisitDescriptionService, locationDescriptionListService, nwisRaService, parameterListService,
-				qualifierLookupService, timeSeriesDataCorrectedService, timeSeriesDescriptionService);
+				qualifierLookupService, timeSeriesDataService, timeSeriesDescriptionService);
 		metadataMap = buildQualifierMetadata();
 		nowInstant = Instant.now();
 		nowLocalDate = LocalDate.now();
@@ -136,7 +137,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -154,7 +155,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(9)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(9)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(8)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -173,7 +174,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildGwTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -194,7 +195,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -213,7 +214,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildGwTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -236,7 +237,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -255,7 +256,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("aqname"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -276,7 +277,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -303,7 +304,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("xxx"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -328,7 +329,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -355,7 +356,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("aqname"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -380,7 +381,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -463,13 +464,13 @@ public class ReportBuilderServiceTest {
 
 	@Test
 	public void buildTimeSeriesCorrectedDataNotFoundAqTest() {
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class))).willReturn(null);
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class),
+				any(boolean.class), any(boolean.class), any(ZoneOffset.class))).willReturn(null);
 		Map<String, TimeSeriesDescription> descriptions = new HashMap<>();
 		descriptions.put("abc", new TimeSeriesDescription());
 		assertNull(service.buildTimeSeriesCorrectedData(descriptions, "abc", null, null));
-		verify(timeSeriesDataCorrectedService).get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService).get(anyString(), any(DvHydrographRequestParameters.class),
+				any(boolean.class), any(boolean.class), any(ZoneOffset.class));
 	}
 
 	@Test
@@ -478,8 +479,8 @@ public class ReportBuilderServiceTest {
 		boolean endOfPeriod = false;
 		ZoneOffset zoneOffset = ZoneOffset.UTC;
 
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class),
+				any(boolean.class), any(boolean.class), any(ZoneOffset.class)))
 						.willReturn(getTimeSeriesDataServiceResponse(endOfPeriod, zoneOffset, true));
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getGapList());
@@ -918,7 +919,7 @@ public class ReportBuilderServiceTest {
 		expected.setPrimarySeriesQualifiers(getQualifiers());
 		expected.setReportMetadata(reportMetadata);
 		if (!isExcludeDiscrete) {
-			expected.setGwlevel(getGwLevels());
+			expected.setGwlevel(getGwLevels().getRecords());
 		}
 		return expected;
 	}
@@ -1368,7 +1369,14 @@ public class ReportBuilderServiceTest {
 			.collect(Collectors.toList());
 	}
 
-	protected List<WaterLevelRecord> getGwLevels() {
+	protected WaterLevelRecords getGwLevels() {
+		WaterLevelRecords toRet = new WaterLevelRecords();
+		toRet.setRecords(getGwLevelRecords());
+		toRet.setAllValid(true);
+		return toRet;
+	}
+
+	protected List<WaterLevelRecord> getGwLevelRecords() {
 		return Stream.of(getWaterLevelRecord(123.456, nowInstant),
 				getWaterLevelRecord(122.334, nowInstant.minusSeconds(3600)))
 			.collect(Collectors.toList());
