@@ -1,7 +1,6 @@
 package gov.usgs.aqcu.builder;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.ControlConditionType;
-import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.DischargeSummary;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.FieldVisitDataServiceResponse;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.FieldVisitDescription;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.LocationDescription;
@@ -30,7 +28,6 @@ import gov.usgs.aqcu.model.DvHydrographReport;
 import gov.usgs.aqcu.model.DvHydrographReportMetadata;
 import gov.usgs.aqcu.model.FieldVisitMeasurement;
 import gov.usgs.aqcu.model.InstantRange;
-import gov.usgs.aqcu.model.MeasurementGrade;
 import gov.usgs.aqcu.model.MinMaxData;
 import gov.usgs.aqcu.model.MinMaxPoint;
 import gov.usgs.aqcu.model.TimeSeriesCorrectedData;
@@ -45,6 +42,7 @@ import gov.usgs.aqcu.retrieval.ParameterListService;
 import gov.usgs.aqcu.retrieval.QualifierLookupService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDataService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
+import gov.usgs.aqcu.util.AqcuReportUtils;
 import gov.usgs.aqcu.util.AqcuTimeUtils;
 import gov.usgs.aqcu.util.BigDecimalSummaryStatistics;
 import gov.usgs.aqcu.util.DoubleWithDisplayUtil;
@@ -103,9 +101,9 @@ public class ReportBuilderService {
 		GroundWaterParameter primarySeriesGwParam = GroundWaterParameter.getByDisplayName(primarySeriesParameter);
 
 		TimeSeriesDataServiceResponse primarySeriesDataResponse = timeSeriesDataService.get(
-				requestParameters.getPrimaryTimeseriesIdentifier(), requestParameters, false,
-				TimeSeriesUtils.isDailyTimeSeries(primarySeriesDescription),
-				primarySeriesZoneOffset);
+			requestParameters.getPrimaryTimeseriesIdentifier(), requestParameters, primarySeriesZoneOffset, 
+			TimeSeriesUtils.isDailyTimeSeries(primarySeriesDescription), false, true, null
+		);
 
 		dvHydroReport.setReportMetadata(createDvHydroMetadata(requestParameters, timeSeriesDescriptions,
 				primarySeriesDescription, primarySeriesDataResponse, requestingUser, primarySeriesGwParam, title));
@@ -157,7 +155,7 @@ public class ReportBuilderService {
 					requestParameters.getComparisonTimeseriesIdentifier(), requestParameters, parameterMetadata));
 		}
 
-		dvHydroReport.setSimsUrl(getSimsUrl(dvHydroReport.getReportMetadata().getStationId()));
+		dvHydroReport.setSimsUrl(AqcuReportUtils.getSimsUrl(dvHydroReport.getReportMetadata().getStationId(), simsUrl));
 		dvHydroReport.setWaterdataUrl(getWaterdataUrl(dvHydroReport.getReportMetadata().getStationId()));
 
 		if (primarySeriesGwParam != null) {
@@ -166,8 +164,8 @@ public class ReportBuilderService {
 						dvHydroReport.getReportMetadata().getStationId(), primarySeriesGwParam, primarySeriesZoneOffset).getRecords());
 			}
 		} else if (DISCHARGE_PARAMETER.contentEquals(primarySeriesParameter)) {
-			dvHydroReport.setFieldVisitMeasurements(buildFieldVisitMeasurements(requestParameters,
-					dvHydroReport.getReportMetadata().getStationId(), primarySeriesZoneOffset));
+			dvHydroReport.setFieldVisitMeasurements(getFieldVisitMeasurements(getFieldVisitData(requestParameters,
+					dvHydroReport.getReportMetadata().getStationId(), primarySeriesZoneOffset)));
 		} else if (!requestParameters.isExcludeDiscrete()) {
 			String unit = primarySeriesDescription.getUnit();
 			String nwisPcode = getNwisPcode(primarySeriesParameter, unit);
@@ -209,11 +207,11 @@ public class ReportBuilderService {
 			boolean isDaily = TimeSeriesUtils.isDailyTimeSeries(timeSeriesDescriptions.get(timeSeriesIdentifier));
 			ZoneOffset zoneOffset = TimeSeriesUtils.getZoneOffset(timeSeriesDescriptions.get(timeSeriesIdentifier));
 			TimeSeriesDataServiceResponse timeSeriesDataServiceResponse = timeSeriesDataService
-					.get(timeSeriesIdentifier, requestParameters, false, isDaily, zoneOffset);
+					.get(timeSeriesIdentifier, requestParameters, zoneOffset, isDaily, false, true, null);
 
 			if (timeSeriesDataServiceResponse != null) {
 				timeSeriesCorrectedData = createTimeSeriesCorrectedData(timeSeriesDataServiceResponse, isDaily,
-						getVolumetricFlow(parameterMetadata, timeSeriesDataServiceResponse.getParameter()), zoneOffset);
+						parameterListService.isVolumetricFlow(parameterMetadata, timeSeriesDataServiceResponse.getParameter()), zoneOffset);
 			}
 		}
 
@@ -287,68 +285,22 @@ public class ReportBuilderService {
 		return metadata;
 	}
 
-	protected List<FieldVisitMeasurement> buildFieldVisitMeasurements(DvHydrographRequestParameters requestParameters,
-			String locationIdentifier, ZoneOffset zoneOffset) {
-		List<FieldVisitMeasurement> fieldVisitMeasurements = new ArrayList<>();
-
-		List<FieldVisitDescription> fieldVisitDescriptions = fieldVisitDescriptionService
-				.getDescriptions(locationIdentifier, zoneOffset, requestParameters);
-
-		if (fieldVisitDescriptions != null) {
-			for (FieldVisitDescription fvd : fieldVisitDescriptions) {
-				fieldVisitMeasurements.addAll(createFieldVisitMeasurements(fvd));
-			}
+	protected List<FieldVisitDataServiceResponse> getFieldVisitData(DvHydrographRequestParameters requestParameters, String locationIdentifier, ZoneOffset zoneOffset) {
+		List<FieldVisitDataServiceResponse> result = new ArrayList<>();
+		
+		for(FieldVisitDescription desc : fieldVisitDescriptionService.getDescriptions(locationIdentifier, zoneOffset, requestParameters)) {
+			result.add(fieldVisitDataService.get(desc.getIdentifier()));
 		}
 
-		return fieldVisitMeasurements;
+		return result;
 	}
 
-	protected List<FieldVisitMeasurement> createFieldVisitMeasurements(FieldVisitDescription visit) {
-		List<FieldVisitMeasurement> ret = new ArrayList<FieldVisitMeasurement>();
-
-		FieldVisitDataServiceResponse fieldVisitDataServiceResponse = fieldVisitDataService.get(visit.getIdentifier());
-
-		if (fieldVisitDataServiceResponse.getDischargeActivities() != null) {
-			ret = fieldVisitDataServiceResponse.getDischargeActivities().stream()
-					.filter(x -> x.getDischargeSummary() != null)
-					.filter(y -> y.getDischargeSummary().getDischarge() != null).map(z -> {
-						return getFieldVisitMeasurement(z.getDischargeSummary());
-					}).collect(Collectors.toList());
+	protected List<FieldVisitMeasurement> getFieldVisitMeasurements(List<FieldVisitDataServiceResponse> fieldVisitData) {
+		List<FieldVisitMeasurement> result = new ArrayList<>();
+		for(FieldVisitDataServiceResponse response : fieldVisitData) {
+			result.addAll(fieldVisitDataService.extractFieldVisitMeasurements(response, null));
 		}
-
-		return ret;
-	}
-
-	protected String getControlCondition(FieldVisitDataServiceResponse fieldVisitDataServiceResponse) {
-		ControlConditionType controlCondition = fieldVisitDataServiceResponse.getControlConditionActivity() != null
-				? fieldVisitDataServiceResponse.getControlConditionActivity().getControlCondition()
-				: null;
-
-		return controlCondition != null ? controlCondition.toString() : null;
-	}
-
-	protected FieldVisitMeasurement getFieldVisitMeasurement(DischargeSummary dischargeSummary) {
-		MeasurementGrade grade = MeasurementGrade.fromMeasurementGradeType(dischargeSummary.getMeasurementGrade());
-
-		FieldVisitMeasurement fieldVisitMeasurement = calculateError(grade, dischargeSummary.getMeasurementId(),
-				DoubleWithDisplayUtil.getRoundedValue(dischargeSummary.getDischarge()),
-				dischargeSummary.getMeasurementStartTime(),
-				dischargeSummary.isPublish());
-
-		return fieldVisitMeasurement;
-	}
-
-	protected FieldVisitMeasurement calculateError(MeasurementGrade grade, String measurementNumber,
-			BigDecimal dischargeValue, Instant dateTime, Boolean publish) {
-
-		BigDecimal errorAmt = dischargeValue.multiply(grade.getPercentageOfError());
-		BigDecimal errorMaxDischargeInFeet = dischargeValue.add(errorAmt);
-		BigDecimal errorMinDischargeInFeet = dischargeValue.subtract(errorAmt);
-
-		FieldVisitMeasurement ret = new FieldVisitMeasurement(measurementNumber, dischargeValue,
-				errorMaxDischargeInFeet, errorMinDischargeInFeet, dateTime, publish);
-
-		return ret;
+		return result;
 	}
 
 	/**
@@ -420,14 +372,6 @@ public class ReportBuilderService {
 		return estimatedPeriods;
 	}
 
-	protected String getSimsUrl(String stationId) {
-		String url = null;
-		if (simsUrl != null && stationId != null) {
-			url = simsUrl + "?site_no=" + stationId;
-		}
-		return url;
-	}
-
 	protected String getWaterdataUrl(String stationId) {
 		String url = null;
 		if (waterdataUrl != null && stationId != null) {
@@ -454,10 +398,5 @@ public class ReportBuilderService {
 						BigDecimalSummaryStatistics::combine);
 
 		return new MinMaxData(stats.getMin(), stats.getMax(), minMaxPoints);
-	}
-
-	protected Boolean getVolumetricFlow(Map<String, ParameterMetadata> parameterMetadata, String parameter) {
-		return parameterMetadata != null && parameterMetadata.containsKey(parameter) && VOLUMETRIC_FLOW_UNIT_GROUP_VALUE
-				.equalsIgnoreCase(parameterMetadata.get(parameter).getUnitGroupIdentifier());
 	}
 }
