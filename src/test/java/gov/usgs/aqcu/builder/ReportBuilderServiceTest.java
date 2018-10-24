@@ -1166,6 +1166,7 @@ public class ReportBuilderServiceTest {
 		f1.setErrorMaxDischarge(BigDecimal.valueOf(21.00945));
 		f1.setErrorMinDischarge(BigDecimal.valueOf(19.00855));
 		f1.setMeasurementStartDate(null);
+		f1.setMeanGageHeight(BigDecimal.valueOf(2.0090));
 		f1.setPublish(false);
 		FieldVisitMeasurement f2 = new FieldVisitMeasurement();
 		f2.setMeasurementNumber(null);
@@ -1173,6 +1174,7 @@ public class ReportBuilderServiceTest {
 		f2.setErrorMaxDischarge(BigDecimal.valueOf(20.40918));
 		f2.setErrorMinDischarge(BigDecimal.valueOf(19.60882));
 		f2.setMeasurementStartDate(null);
+		f2.setMeanGageHeight(BigDecimal.valueOf(2.0090));
 		f2.setPublish(false);
 		FieldVisitMeasurement f3 = new FieldVisitMeasurement();
 		f3.setMeasurementNumber(null);
@@ -1180,6 +1182,7 @@ public class ReportBuilderServiceTest {
 		f3.setErrorMaxDischarge(BigDecimal.valueOf(21.00945));
 		f3.setErrorMinDischarge(BigDecimal.valueOf(19.00855));
 		f3.setMeasurementStartDate(null);
+		f3.setMeanGageHeight(BigDecimal.valueOf(2.0090));
 		f3.setPublish(false);
 		FieldVisitMeasurement f4 = new FieldVisitMeasurement();
 		f4.setMeasurementNumber(null);
@@ -1187,10 +1190,10 @@ public class ReportBuilderServiceTest {
 		f4.setErrorMaxDischarge(BigDecimal.valueOf(20.40918));
 		f4.setErrorMinDischarge(BigDecimal.valueOf(19.60882));
 		f4.setMeasurementStartDate(null);
+		f4.setMeanGageHeight(BigDecimal.valueOf(2.0090));
 		f4.setPublish(false);
 
-
-		return Arrays.asList(f1,f2);
+		return Arrays.asList(f1,f2,f3,f4);
 	}
 
 	protected WaterLevelRecords getGwLevels() {
