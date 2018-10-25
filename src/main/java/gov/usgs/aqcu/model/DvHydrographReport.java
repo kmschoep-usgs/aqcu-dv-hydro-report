@@ -5,6 +5,9 @@ import java.util.List;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.Approval;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.Qualifier;
 
+import gov.usgs.aqcu.model.nwis.WaterLevelRecord;
+import gov.usgs.aqcu.model.nwis.WaterQualitySampleRecord;
+
 public class DvHydrographReport {	
 
 	//Required Properties

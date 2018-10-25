@@ -5,17 +5,19 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -33,14 +35,14 @@ import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.aquaticinformatics.aquarius.sdk.timeseries.serializers.InstantDeserializer;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.Approval;
-import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.ControlConditionActivity;
-import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.ControlConditionType;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.DischargeActivity;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.DischargeSummary;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.DoubleWithDisplay;
@@ -66,23 +68,25 @@ import gov.usgs.aqcu.model.DvHydrographReport;
 import gov.usgs.aqcu.model.DvHydrographReportMetadata;
 import gov.usgs.aqcu.model.FieldVisitMeasurement;
 import gov.usgs.aqcu.model.InstantRange;
-import gov.usgs.aqcu.model.MeasurementGrade;
 import gov.usgs.aqcu.model.MinMaxData;
 import gov.usgs.aqcu.model.MinMaxPoint;
 import gov.usgs.aqcu.model.TimeSeriesCorrectedData;
-import gov.usgs.aqcu.model.WaterLevelRecord;
-import gov.usgs.aqcu.model.WaterQualitySampleRecord;
-import gov.usgs.aqcu.model.WqValue;
+import gov.usgs.aqcu.model.nwis.WaterLevelRecord;
+import gov.usgs.aqcu.model.nwis.WaterLevelRecords;
+import gov.usgs.aqcu.model.nwis.WaterQualitySampleRecord;
+import gov.usgs.aqcu.model.nwis.WqValue;
 import gov.usgs.aqcu.model.nwis.GroundWaterParameter;
 import gov.usgs.aqcu.model.nwis.ParameterRecord;
 import gov.usgs.aqcu.parameter.DvHydrographRequestParameters;
+import gov.usgs.aqcu.retrieval.AquariusRetrievalService;
 import gov.usgs.aqcu.retrieval.FieldVisitDataService;
 import gov.usgs.aqcu.retrieval.FieldVisitDescriptionService;
 import gov.usgs.aqcu.retrieval.LocationDescriptionListService;
 import gov.usgs.aqcu.retrieval.NwisRaService;
 import gov.usgs.aqcu.retrieval.ParameterListService;
 import gov.usgs.aqcu.retrieval.QualifierLookupService;
-import gov.usgs.aqcu.retrieval.TimeSeriesDataCorrectedService;
+import gov.usgs.aqcu.retrieval.RatingModelInputValuesService;
+import gov.usgs.aqcu.retrieval.TimeSeriesDataService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
 
 @RunWith(SpringRunner.class)
@@ -97,8 +101,12 @@ public class ReportBuilderServiceTest {
 	public static final QualifierMetadata QUALIFIER_METADATA_D = new QualifierMetadata().setIdentifier("d");
 
 	@MockBean
-	private DataGapListBuilderService dataGapListBuilderService;
+	private AquariusRetrievalService aquariusService;
 	@MockBean
+	private RatingModelInputValuesService ratingInputService;
+	@MockBean
+	private DataGapListBuilderService dataGapListBuilderService;
+	@SpyBean
 	private FieldVisitDataService fieldVisitDataService;
 	@MockBean
 	private FieldVisitDescriptionService fieldVisitDescriptionService;
@@ -111,7 +119,7 @@ public class ReportBuilderServiceTest {
 	@MockBean
 	private QualifierLookupService qualifierLookupService;
 	@MockBean
-	private TimeSeriesDataCorrectedService timeSeriesDataCorrectedService;
+	private TimeSeriesDataService timeSeriesDataService;
 	@MockBean
 	private TimeSeriesDescriptionService timeSeriesDescriptionService;
 
@@ -121,13 +129,18 @@ public class ReportBuilderServiceTest {
 	private LocalDate nowLocalDate;
 
 	@Before
+	@SuppressWarnings("unchecked")
 	public void setup() {
+		fieldVisitDataService = Mockito.spy(new FieldVisitDataService(aquariusService, ratingInputService));
 		service = new ReportBuilderService(dataGapListBuilderService, fieldVisitDataService,
 				fieldVisitDescriptionService, locationDescriptionListService, nwisRaService, parameterListService,
-				qualifierLookupService, timeSeriesDataCorrectedService, timeSeriesDescriptionService);
+				qualifierLookupService, timeSeriesDataService, timeSeriesDescriptionService);
 		metadataMap = buildQualifierMetadata();
 		nowInstant = Instant.now();
 		nowLocalDate = LocalDate.now();
+
+		// Setup non-mock methods
+		when(parameterListService.isVolumetricFlow(any(Map.class), any(String.class))).thenCallRealMethod();
 	}
 
 	@Test
@@ -136,7 +149,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -144,17 +157,16 @@ public class ReportBuilderServiceTest {
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
 			.willReturn(getGapList());
 		given(qualifierLookupService.getByQualifierList(anyList())).willReturn(metadataMap);
-		given(fieldVisitDataService.get(anyString()))
-			.willReturn(getFieldVisitDataServiceResponse(getActivities()));
 		given(fieldVisitDescriptionService.getDescriptions(anyString(), any(ZoneOffset.class), any(DvHydrographRequestParameters.class)))
 			.willReturn(getFieldVisitDecriptions());
+		doReturn(getFieldVisitDataServiceResponse(getActivities())).when(fieldVisitDataService).get(anyString());
 
 		DvHydrographReport actual = service.buildReport(buildRequestParameters(), "requestingUser", "DV Hydrograph");
 		ObjectCompare.compare(buildExpectedDvHydrographReport(), actual);
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(9)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(9)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(8)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -173,7 +185,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildGwTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -194,7 +206,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -213,7 +225,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildGwTimeSeriesDescriptions());
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), true),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), true));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -236,7 +248,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -255,7 +267,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("aqname"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -276,7 +288,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -303,7 +315,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("xxx"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -328,7 +340,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -355,7 +367,7 @@ public class ReportBuilderServiceTest {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
 				.willReturn(buildWqTimeSeriesDescriptions("aqname"));
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 				.willReturn(getTimeSeriesDataServiceResponse(true, ZoneOffset.of("-4"), false),
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
@@ -380,7 +392,7 @@ public class ReportBuilderServiceTest {
 
 		verify(parameterListService).getParameterMetadata();
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
-		verify(timeSeriesDataCorrectedService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
 		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
@@ -394,68 +406,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	public void getNwisPcodeNameNotFoundTest() {
-		given(nwisRaService.getAqParameterNames()).willReturn(new ArrayList<ParameterRecord>());
-		assertNull(service.getNwisPcode("aqname", "unit"));
-		verify(nwisRaService).getAqParameterNames();
-		verify(nwisRaService, never()).getAqParameterUnits();
-	}
-
-	@Test
-	public void getNwisPcodeNameFoundUnitNotFoundTest() {
-		ParameterRecord pcodeB = new ParameterRecord();
-		pcodeB.setName("nwisNameB");
-		pcodeB.setAlias("unit");
-		pcodeB.setCode("pCode");
-		ParameterRecord pcodeC = new ParameterRecord();
-		pcodeC.setName("nwisName");
-		pcodeC.setAlias("unitC");
-		pcodeC.setCode("pCode");
-		ParameterRecord pcodeD = new ParameterRecord();
-		pcodeD.setName("nwisNameD");
-		pcodeD.setAlias("unitD");
-		pcodeD.setCode("pCode");
-		ParameterRecord aqname = new ParameterRecord();
-		aqname.setAlias("aqname");
-		aqname.setName("nwisName");
-		given(nwisRaService.getAqParameterNames()).willReturn(Arrays.asList(aqname));
-		given(nwisRaService.getAqParameterUnits()).willReturn(Arrays.asList(pcodeB, pcodeC, pcodeD));
-		assertNull(service.getNwisPcode("aqname", "unit"));
-		verify(nwisRaService).getAqParameterNames();
-		verify(nwisRaService).getAqParameterUnits();
-	}
-
-	@Test
-	public void getNwisPcodeTest() {
-		ParameterRecord pcodeA = new ParameterRecord();
-		pcodeA.setName("nwisName");
-		pcodeA.setAlias("unit");
-		pcodeA.setCode("pCode");
-		ParameterRecord pcodeB = new ParameterRecord();
-		pcodeB.setName("nwisNameB");
-		pcodeB.setAlias("unit");
-		pcodeB.setCode("pCode");
-		ParameterRecord pcodeC = new ParameterRecord();
-		pcodeC.setName("nwisName");
-		pcodeC.setAlias("unitC");
-		pcodeC.setCode("pCode");
-		ParameterRecord pcodeD = new ParameterRecord();
-		pcodeD.setName("nwisNameD");
-		pcodeD.setAlias("unitD");
-		pcodeD.setCode("pCode");
-		ParameterRecord aqname = new ParameterRecord();
-		aqname.setAlias("aqname");
-		aqname.setName("nwisName");
-		Map<String, ParameterRecord> units = new HashMap<>();
-		units.put("aqname", new ParameterRecord());
-		given(nwisRaService.getAqParameterNames()).willReturn(Arrays.asList(aqname));
-		given(nwisRaService.getAqParameterUnits()).willReturn(Arrays.asList(pcodeA, pcodeB, pcodeC, pcodeD));
-		assertEquals("pCode", service.getNwisPcode("aqname", "unit"));
-		verify(nwisRaService).getAqParameterNames();
-		verify(nwisRaService).getAqParameterUnits();
-	}
-
-	@Test
 	public void buildTimeSeriesCorrectedDataNullTest() {
 		assertNull(service.buildTimeSeriesCorrectedData(null, null, null, null));
 		assertNull(service.buildTimeSeriesCorrectedData(new HashMap<String, TimeSeriesDescription>(), null, null, null));
@@ -463,13 +413,13 @@ public class ReportBuilderServiceTest {
 
 	@Test
 	public void buildTimeSeriesCorrectedDataNotFoundAqTest() {
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class))).willReturn(null);
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+				any(boolean.class), any(boolean.class), any(boolean.class), eq(null))).willReturn(null);
 		Map<String, TimeSeriesDescription> descriptions = new HashMap<>();
 		descriptions.put("abc", new TimeSeriesDescription());
 		assertNull(service.buildTimeSeriesCorrectedData(descriptions, "abc", null, null));
-		verify(timeSeriesDataCorrectedService).get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class));
+		verify(timeSeriesDataService).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+		any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 	}
 
 	@Test
@@ -478,8 +428,8 @@ public class ReportBuilderServiceTest {
 		boolean endOfPeriod = false;
 		ZoneOffset zoneOffset = ZoneOffset.UTC;
 
-		given(timeSeriesDataCorrectedService.get(anyString(), any(DvHydrographRequestParameters.class),
-				any(boolean.class), any(ZoneOffset.class)))
+		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+		any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 						.willReturn(getTimeSeriesDataServiceResponse(endOfPeriod, zoneOffset, true));
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getGapList());
@@ -544,114 +494,6 @@ public class ReportBuilderServiceTest {
 				gwParam, "DV Hydrograph");
 
 		assertThat(actual, samePropertyValuesAs(buildThirdExpectedDvHydroMetadata()));
-	}
-
-	@Test
-	public void buildFieldVisitMeasurements_nullTest() {
-		given(fieldVisitDescriptionService.getDescriptions(anyString(), any(ZoneOffset.class),
-				any(DvHydrographRequestParameters.class))).willReturn(null);
-		List<FieldVisitMeasurement> actual = service.buildFieldVisitMeasurements(null, null, null);
-		assertTrue(actual.isEmpty());
-	}
-
-	@Test
-	public void buildFieldVisitMeasurements_loopTest() {
-		given(fieldVisitDescriptionService.getDescriptions(anyString(), any(ZoneOffset.class),
-				any(DvHydrographRequestParameters.class))).willReturn(getFieldVisitDecriptions());
-
-		given(fieldVisitDataService.get(anyString()))
-				.willReturn(getFieldVisitDataServiceResponse(getActivities()));
-
-		List<FieldVisitMeasurement> actual = service.buildFieldVisitMeasurements(null, null, null);
-		assertEquals(4, actual.size());
-		verify(fieldVisitDataService, times(2)).get(anyString());
-	}
-
-	@Test
-	public void createFieldVisitMeasurement_noDischargeActivitiesTest() {
-		given(fieldVisitDataService.get(anyString())).willReturn(new FieldVisitDataServiceResponse());
-		FieldVisitDescription visit = new FieldVisitDescription();
-		List<FieldVisitMeasurement> actual = service.createFieldVisitMeasurements(visit);
-		assertTrue(actual.isEmpty());
-	}
-
-	@Test
-	public void createFieldVisitMeasurement_noDischargeSummaryTest() {
-		ArrayList<DischargeActivity> activities = Stream.of(new DischargeActivity(), new DischargeActivity())
-				.collect(Collectors.toCollection(ArrayList::new));
-		given(fieldVisitDataService.get(anyString()))
-				.willReturn(getFieldVisitDataServiceResponse(activities));
-		FieldVisitDescription visit = new FieldVisitDescription();
-		List<FieldVisitMeasurement> actual = service.createFieldVisitMeasurements(visit);
-		assertTrue(actual.isEmpty());
-	}
-
-	@Test
-	public void createFieldVisitMeasurement_noDischargeTest() {
-		ArrayList<DischargeActivity> activities = Stream
-				.of(new DischargeActivity().setDischargeSummary(new DischargeSummary()),
-						new DischargeActivity().setDischargeSummary(new DischargeSummary()))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		given(fieldVisitDataService.get(anyString()))
-				.willReturn(getFieldVisitDataServiceResponse(activities));
-		FieldVisitDescription visit = new FieldVisitDescription();
-		List<FieldVisitMeasurement> actual = service.createFieldVisitMeasurements(visit);
-		assertTrue(actual.isEmpty());
-	}
-
-	@Test
-	public void createFieldVisitMeasurement_happyTest() {
-		given(fieldVisitDataService.get(anyString()))
-				.willReturn(getFieldVisitDataServiceResponse(getActivities()));
-		FieldVisitDescription visit = new FieldVisitDescription();
-		List<FieldVisitMeasurement> actual = service.createFieldVisitMeasurements(visit);
-		assertEquals(2, actual.size());
-		// Nice To Have - compare the two objects to expected values.
-	}
-
-	@Test
-	public void getControlCondition_nullActivityTest() {
-		FieldVisitDataServiceResponse resp = new FieldVisitDataServiceResponse();
-		assertNull(service.getControlCondition(resp));
-	}
-
-	@Test
-	public void getControlCondition_nullConditionTest() {
-		FieldVisitDataServiceResponse resp = new FieldVisitDataServiceResponse()
-				.setControlConditionActivity(new ControlConditionActivity());
-		assertNull(service.getControlCondition(resp));
-	}
-
-	@Test
-	public void getControlCondition_happyTest() {
-		FieldVisitDataServiceResponse resp = new FieldVisitDataServiceResponse().setControlConditionActivity(
-				new ControlConditionActivity().setControlCondition(ControlConditionType.DebrisHeavy));
-		assertEquals("DebrisHeavy", service.getControlCondition(resp));
-	}
-
-	@Test
-	public void getFieldVisitMeasurementTest() {
-		FieldVisitMeasurement actual = service.getFieldVisitMeasurement(new DischargeSummary()
-				.setMeasurementGrade(MeasurementGradeType.Good).setMeasurementId("20.0090")
-				.setDischarge((QuantityWithDisplay) new QuantityWithDisplay().setUnit("dischargeUnits")
-						.setDisplay("20.0090").setNumeric(Double.valueOf("20.0090")))
-				.setMeanGageHeight((QuantityWithDisplay) new QuantityWithDisplay().setUnit("meanGageHeightUnits")
-						.setDisplay("2.0090").setNumeric(Double.valueOf("2.0090")))
-				.setMeasurementStartTime(nowInstant)
-				.setPublish(false));
-		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
-		ObjectCompare.compare(expected, actual);
-	}
-
-	@Test
-	public void calculateErrorTest() {
-		FieldVisitMeasurement expected = new FieldVisitMeasurement("20.0090", new BigDecimal("20.0090"),
-				new BigDecimal("21.00945000"), new BigDecimal("19.00855000"), nowInstant, false);
-		FieldVisitMeasurement actual = service.calculateError(MeasurementGrade.GOOD, "20.0090",
-				new BigDecimal("20.0090"), nowInstant, false);
-		ObjectCompare.compare(expected, actual);
 	}
 
 	@Test
@@ -742,22 +584,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	public void getSimsUrlNullTest() {
-		assertNull(service.getSimsUrl(null));
-
-		assertNull(service.getSimsUrl("stationid"));
-
-		ReflectionTestUtils.setField(service, "simsUrl", "www.hi.org");
-		assertNull(service.getSimsUrl(null));
-	}
-
-	@Test
-	public void getSimsUrlTest() {
-		ReflectionTestUtils.setField(service, "simsUrl", "www.hi.org");
-		assertEquals("www.hi.org?site_no=stationid", service.getSimsUrl("stationid"));
-	}
-
-	@Test
 	public void getWaterdataUrlNullTest() {
 		assertNull(service.getWaterdataUrl(null));
 
@@ -817,28 +643,6 @@ public class ReportBuilderServiceTest {
 		assertNotNull(minMaxData.getMax());
 		assertEquals(1, minMaxData.getMax().size());
 		assertThat(minMaxData.getMax(), contains(samePropertyValuesAs(getMinMaxPoint3(endOfPeriod, zoneOffset))));
-	}
-
-	@Test
-	public void getVolumetricFlowNullsTest() {
-		assertFalse(service.getVolumetricFlow(null, null));
-		assertFalse(service.getVolumetricFlow(new HashMap<String, ParameterMetadata>(), null));
-		assertFalse(service.getVolumetricFlow(null, ""));
-	}
-
-	@Test
-	public void getVolumetricFlowNotFoundTest() {
-		assertFalse(service.getVolumetricFlow(getParameterMetadata(), "xyz"));
-	}
-
-	@Test
-	public void getVolumetricFlowNotVfTest() {
-		assertFalse(service.getVolumetricFlow(getParameterMetadata(), "abc"));
-	}
-
-	@Test
-	public void getVolumetricFlowTest() {
-		assertTrue(service.getVolumetricFlow(getParameterMetadata(), "def"));
 	}
 
 	// --------------------------------------------------------------------------------------------------
@@ -918,7 +722,7 @@ public class ReportBuilderServiceTest {
 		expected.setPrimarySeriesQualifiers(getQualifiers());
 		expected.setReportMetadata(reportMetadata);
 		if (!isExcludeDiscrete) {
-			expected.setGwlevel(getGwLevels());
+			expected.setGwlevel(getGwLevels().getRecords());
 		}
 		return expected;
 	}
@@ -1356,19 +1160,50 @@ public class ReportBuilderServiceTest {
 	}
 
 	protected List<FieldVisitMeasurement> getFieldVisitMeasurements() {
-		return Stream.of(
-				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null, false),
-				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null, false),
-				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(21.00945),
-						BigDecimal.valueOf(19.00855), null, false),
-				new FieldVisitMeasurement(null, BigDecimal.valueOf(20.009), BigDecimal.valueOf(20.40918),
-						BigDecimal.valueOf(19.60882), null, false))
-			.collect(Collectors.toList());
+		FieldVisitMeasurement f1 = new FieldVisitMeasurement();
+		f1.setMeasurementNumber(null);
+		f1.setDischarge(BigDecimal.valueOf(20.009));
+		f1.setErrorMaxDischarge(BigDecimal.valueOf(21.00945));
+		f1.setErrorMinDischarge(BigDecimal.valueOf(19.00855));
+		f1.setMeasurementStartDate(null);
+		f1.setMeanGageHeight(BigDecimal.valueOf(2.0090));
+		f1.setPublish(false);
+		FieldVisitMeasurement f2 = new FieldVisitMeasurement();
+		f2.setMeasurementNumber(null);
+		f2.setDischarge(BigDecimal.valueOf(20.009));
+		f2.setErrorMaxDischarge(BigDecimal.valueOf(20.40918));
+		f2.setErrorMinDischarge(BigDecimal.valueOf(19.60882));
+		f2.setMeasurementStartDate(null);
+		f2.setMeanGageHeight(BigDecimal.valueOf(2.0090));
+		f2.setPublish(false);
+		FieldVisitMeasurement f3 = new FieldVisitMeasurement();
+		f3.setMeasurementNumber(null);
+		f3.setDischarge(BigDecimal.valueOf(20.009));
+		f3.setErrorMaxDischarge(BigDecimal.valueOf(21.00945));
+		f3.setErrorMinDischarge(BigDecimal.valueOf(19.00855));
+		f3.setMeasurementStartDate(null);
+		f3.setMeanGageHeight(BigDecimal.valueOf(2.0090));
+		f3.setPublish(false);
+		FieldVisitMeasurement f4 = new FieldVisitMeasurement();
+		f4.setMeasurementNumber(null);
+		f4.setDischarge(BigDecimal.valueOf(20.009));
+		f4.setErrorMaxDischarge(BigDecimal.valueOf(20.40918));
+		f4.setErrorMinDischarge(BigDecimal.valueOf(19.60882));
+		f4.setMeasurementStartDate(null);
+		f4.setMeanGageHeight(BigDecimal.valueOf(2.0090));
+		f4.setPublish(false);
+
+		return Arrays.asList(f1,f2,f3,f4);
 	}
 
-	protected List<WaterLevelRecord> getGwLevels() {
+	protected WaterLevelRecords getGwLevels() {
+		WaterLevelRecords toRet = new WaterLevelRecords();
+		toRet.setRecords(getGwLevelRecords());
+		toRet.setAllValid(true);
+		return toRet;
+	}
+
+	protected List<WaterLevelRecord> getGwLevelRecords() {
 		return Stream.of(getWaterLevelRecord(123.456, nowInstant),
 				getWaterLevelRecord(122.334, nowInstant.minusSeconds(3600)))
 			.collect(Collectors.toList());
