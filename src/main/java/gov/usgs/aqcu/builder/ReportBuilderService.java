@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.ControlConditionType;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.FieldVisitDataServiceResponse;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.FieldVisitDescription;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.LocationDescription;
@@ -112,7 +111,7 @@ public class ReportBuilderService {
 		dvHydroReport.setPrimarySeriesApprovals(primarySeriesDataResponse.getApprovals());
 
 		if (primarySeriesDataResponse.getPoints() != null) {
-			dvHydroReport.setMaxMinData(getMinMaxData(primarySeriesDataResponse.getPoints()));
+			dvHydroReport.setMaxMinData(TimeSeriesUtils.getMinMaxData(primarySeriesDataResponse.getPoints()));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getFirstStatDerivedIdentifier())) {
@@ -378,25 +377,5 @@ public class ReportBuilderService {
 			url = waterdataUrl + "?site_no=" + stationId;
 		}
 		return url;
-	}
-
-	/**
-	 * This method should only be called if the timeSeriesPoints list is not null.
-	 */
-	protected MinMaxData getMinMaxData(List<TimeSeriesPoint> timeSeriesPoints) {
-		Map<BigDecimal, List<MinMaxPoint>> minMaxPoints = timeSeriesPoints.parallelStream()
-				.map(x -> {
-					MinMaxPoint point = new MinMaxPoint(x.getTimestamp().getDateTimeOffset(), DoubleWithDisplayUtil.getRoundedValue(x.getValue()));
-					return point;
-				})
-				.filter(x -> x.getValue() != null)
-				.collect(Collectors.groupingByConcurrent(MinMaxPoint::getValue));
-
-		BigDecimalSummaryStatistics stats = minMaxPoints.keySet().parallelStream()
-				.collect(BigDecimalSummaryStatistics::new,
-						BigDecimalSummaryStatistics::accept,
-						BigDecimalSummaryStatistics::combine);
-
-		return new MinMaxData(stats.getMin(), stats.getMax(), minMaxPoints);
 	}
 }

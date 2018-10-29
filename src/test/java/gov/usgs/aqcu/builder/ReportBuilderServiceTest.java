@@ -599,52 +599,6 @@ public class ReportBuilderServiceTest {
 		assertEquals("www.hi.org?site_no=stationid", service.getWaterdataUrl("stationid"));
 	}
 
-	@Test
-	public void getMinMaxDataEmptyListTest() {
-		MinMaxData minMaxData = service.getMinMaxData(new ArrayList<TimeSeriesPoint>());
-		assertNotNull(minMaxData);
-		assertNotNull(minMaxData.getMin());
-		assertTrue(minMaxData.getMin().isEmpty());
-		assertNotNull(minMaxData.getMax());
-		assertTrue(minMaxData.getMax().isEmpty());
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	public void getMinMaxDataDvTest() {
-		boolean endOfPeriod = true;
-		ZoneOffset zoneOffset = ZoneOffset.of("-6");
-		MinMaxData minMaxData = service.getMinMaxData(getTimeSeriesPoints(endOfPeriod, zoneOffset));
-		assertNotNull(minMaxData);
-		assertNotNull(minMaxData.getMin());
-		assertEquals(3, minMaxData.getMin().size());
-		assertThat(minMaxData.getMin(),
-				contains(samePropertyValuesAs(getMinMaxPoint5(endOfPeriod, zoneOffset)),
-						samePropertyValuesAs(getMinMaxPoint4(endOfPeriod, zoneOffset)),
-						samePropertyValuesAs(getMinMaxPoint2(endOfPeriod, zoneOffset))));
-		assertNotNull(minMaxData.getMax());
-		assertEquals(1, minMaxData.getMax().size());
-		assertThat(minMaxData.getMax(), contains(samePropertyValuesAs(getMinMaxPoint3(endOfPeriod, zoneOffset))));
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	public void getMinMaxDataTsTest() {
-		boolean endOfPeriod = false;
-		ZoneOffset zoneOffset = ZoneOffset.UTC;
-		MinMaxData minMaxData = service.getMinMaxData(getTimeSeriesPoints(endOfPeriod, zoneOffset));
-		assertNotNull(minMaxData);
-		assertNotNull(minMaxData.getMin());
-		assertEquals(3, minMaxData.getMin().size());
-		assertThat(minMaxData.getMin(),
-				contains(samePropertyValuesAs(getMinMaxPoint5(endOfPeriod, zoneOffset)),
-						samePropertyValuesAs(getMinMaxPoint4(endOfPeriod, zoneOffset)),
-						samePropertyValuesAs(getMinMaxPoint2(endOfPeriod, zoneOffset))));
-		assertNotNull(minMaxData.getMax());
-		assertEquals(1, minMaxData.getMax().size());
-		assertThat(minMaxData.getMax(), contains(samePropertyValuesAs(getMinMaxPoint3(endOfPeriod, zoneOffset))));
-	}
-
 	// --------------------------------------------------------------------------------------------------
 
 	protected DvHydrographRequestParameters buildRequestParameters() {
