@@ -1,6 +1,5 @@
 package gov.usgs.aqcu.builder;
 
-import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +26,6 @@ import gov.usgs.aqcu.model.DvHydrographReport;
 import gov.usgs.aqcu.model.DvHydrographReportMetadata;
 import gov.usgs.aqcu.model.FieldVisitMeasurement;
 import gov.usgs.aqcu.model.InstantRange;
-import gov.usgs.aqcu.model.MinMaxData;
-import gov.usgs.aqcu.model.MinMaxPoint;
 import gov.usgs.aqcu.model.TimeSeriesCorrectedData;
 import gov.usgs.aqcu.model.nwis.GroundWaterParameter;
 import gov.usgs.aqcu.model.nwis.ParameterRecord;
@@ -43,7 +40,6 @@ import gov.usgs.aqcu.retrieval.TimeSeriesDataService;
 import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
 import gov.usgs.aqcu.util.AqcuReportUtils;
 import gov.usgs.aqcu.util.AqcuTimeUtils;
-import gov.usgs.aqcu.util.BigDecimalSummaryStatistics;
 import gov.usgs.aqcu.util.DoubleWithDisplayUtil;
 import gov.usgs.aqcu.util.TimeSeriesUtils;
 
