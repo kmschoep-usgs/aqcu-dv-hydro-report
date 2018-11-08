@@ -108,6 +108,8 @@ public class ReportBuilderServiceTest {
 	private FieldVisitDataService fieldVisitDataService;
 	@MockBean
 	private FieldVisitDescriptionService fieldVisitDescriptionService;
+	@SpyBean
+	private FieldVisitMeasurementsBuilderService fieldVisitMeasurementsService;
 	@MockBean
 	private LocationDescriptionListService locationDescriptionListService;
 	@MockBean
@@ -129,10 +131,10 @@ public class ReportBuilderServiceTest {
 	@Before
 	@SuppressWarnings("unchecked")
 	public void setup() {
-		fieldVisitDataService = Mockito.spy(new FieldVisitDataService(aquariusService, ratingInputService));
+		fieldVisitMeasurementsService = Mockito.spy(new FieldVisitMeasurementsBuilderService(ratingInputService));
 		service = new ReportBuilderService(dataGapListBuilderService, fieldVisitDataService,
-				fieldVisitDescriptionService, locationDescriptionListService, nwisRaService, parameterListService,
-				qualifierLookupService, timeSeriesDataService, timeSeriesDescriptionService);
+				fieldVisitDescriptionService, fieldVisitMeasurementsService, locationDescriptionListService, nwisRaService,
+				parameterListService, qualifierLookupService, timeSeriesDataService, timeSeriesDescriptionService);
 		metadataMap = buildQualifierMetadata();
 		nowInstant = Instant.now();
 		nowLocalDate = LocalDate.now();

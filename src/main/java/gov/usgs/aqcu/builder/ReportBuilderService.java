@@ -52,6 +52,7 @@ public class ReportBuilderService {
 
 	private DataGapListBuilderService dataGapListBuilderService;
 	private FieldVisitDataService fieldVisitDataService;
+	private FieldVisitMeasurementsBuilderService fieldVisitMeasurementsBuilderService;
 	private FieldVisitDescriptionService fieldVisitDescriptionService;
 	private LocationDescriptionListService locationDescriptionListService;
 	private NwisRaService nwisRaService;
@@ -68,13 +69,15 @@ public class ReportBuilderService {
 	@Autowired
 	public ReportBuilderService(DataGapListBuilderService dataGapListBuilderService,
 			FieldVisitDataService fieldVisitDataService, FieldVisitDescriptionService fieldVisitDescriptionService,
+			FieldVisitMeasurementsBuilderService fieldVisitMeasurementsBuilderService, 
 			LocationDescriptionListService locationDescriptionListService, NwisRaService nwisRaService,
 			ParameterListService parameterListService, QualifierLookupService qualifierLookupService,
-			TimeSeriesDataService timeSeriesDataService,
-			TimeSeriesDescriptionService timeSeriesDescriptionService) {
+			TimeSeriesDataService timeSeriesDataService, TimeSeriesDescriptionService timeSeriesDescriptionService
+	) {
 		this.dataGapListBuilderService = dataGapListBuilderService;
 		this.fieldVisitDataService = fieldVisitDataService;
 		this.fieldVisitDescriptionService = fieldVisitDescriptionService;
+		this.fieldVisitMeasurementsBuilderService = fieldVisitMeasurementsBuilderService;
 		this.locationDescriptionListService = locationDescriptionListService;
 		this.nwisRaService = nwisRaService;
 		this.parameterListService = parameterListService;
@@ -293,7 +296,7 @@ public class ReportBuilderService {
 	protected List<FieldVisitMeasurement> getFieldVisitMeasurements(List<FieldVisitDataServiceResponse> fieldVisitData) {
 		List<FieldVisitMeasurement> result = new ArrayList<>();
 		for(FieldVisitDataServiceResponse response : fieldVisitData) {
-			result.addAll(fieldVisitDataService.extractFieldVisitMeasurements(response, null));
+			result.addAll(fieldVisitMeasurementsBuilderService.extractFieldVisitMeasurements(response, null));
 		}
 		return result;
 	}
