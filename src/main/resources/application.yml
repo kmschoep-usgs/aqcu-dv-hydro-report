@@ -15,6 +15,7 @@ aquarius:
     password: ${aquariusServicePassword}
     retries:
       unauthorized: ${aquariusUnauthorizedRetires:3}
+    timeout: 30000
 
 nwis-ra:
   service:
