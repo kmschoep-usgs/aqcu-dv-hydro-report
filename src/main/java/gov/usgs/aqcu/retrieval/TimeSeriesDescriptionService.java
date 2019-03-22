@@ -17,6 +17,7 @@ import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.Time
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.TimeSeriesDescriptionListByUniqueIdServiceResponse;
 
 import gov.usgs.aqcu.parameter.DvHydrographRequestParameters;
+import gov.usgs.aqcu.util.LogExecutionTime;
 
 @Repository
 public class TimeSeriesDescriptionService {
@@ -29,6 +30,7 @@ public class TimeSeriesDescriptionService {
 		this.aquariusRetrievalService = aquariusRetrievalService;
 	}
 
+	@LogExecutionTime
 	public Map<String, TimeSeriesDescription> getTimeSeriesDescriptions(DvHydrographRequestParameters requestParameters) {
 		ArrayList<String> uniqueTimeseriesIdentifiers = buildUniqueIdentifierList(requestParameters);
 		Map<String, TimeSeriesDescription> timeSeriesDescriptions = new HashMap<>();

@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,11 +43,12 @@ import gov.usgs.aqcu.retrieval.TimeSeriesDescriptionService;
 import gov.usgs.aqcu.util.AqcuReportUtils;
 import gov.usgs.aqcu.util.AqcuTimeUtils;
 import gov.usgs.aqcu.util.DoubleWithDisplayUtil;
+import gov.usgs.aqcu.util.LogExecutionTime;
 import gov.usgs.aqcu.util.TimeSeriesUtils;
 
 @Service
 public class ReportBuilderService {
-
+	private static final Logger LOG = LoggerFactory.getLogger(ReportBuilderService.class);
 	protected static final String ESTIMATED_QUALIFIER_VALUE = "ESTIMATED";
 	protected static final String VOLUMETRIC_FLOW_UNIT_GROUP_VALUE = "Volumetric Flow";
 	private static final String DISCHARGE_PARAMETER = "Discharge";
@@ -86,69 +89,88 @@ public class ReportBuilderService {
 		this.timeSeriesDescriptionService = timeSeriesDescriptionService;
 	}
 
+	@LogExecutionTime
 	public DvHydrographReport buildReport(DvHydrographRequestParameters requestParameters, String requestingUser, String title) {
 		DvHydrographReport dvHydroReport = new DvHydrographReport();
 
+		LOG.debug("Get time series descriptions from Aquarius");
 		Map<String, TimeSeriesDescription> timeSeriesDescriptions = timeSeriesDescriptionService
 				.getTimeSeriesDescriptions(requestParameters);
+		
+		LOG.debug("Get time series descriptions from parameter list service");
 		Map<String, ParameterMetadata> parameterMetadata = parameterListService.getParameterMetadata();
 
+		LOG.debug("Get primary time series description");
 		TimeSeriesDescription primarySeriesDescription = timeSeriesDescriptions.get(requestParameters.getPrimaryTimeseriesIdentifier());
 		ZoneOffset primarySeriesZoneOffset = TimeSeriesUtils.getZoneOffset(primarySeriesDescription);
 		String primarySeriesParameter = primarySeriesDescription.getParameter().toString();
 		GroundWaterParameter primarySeriesGwParam = GroundWaterParameter.getByDisplayName(primarySeriesParameter);
-
+		
+		LOG.debug("Get primary time series data");
 		TimeSeriesDataServiceResponse primarySeriesDataResponse = timeSeriesDataService.get(
 			requestParameters.getPrimaryTimeseriesIdentifier(), requestParameters, primarySeriesZoneOffset, 
 			TimeSeriesUtils.isDailyTimeSeries(primarySeriesDescription), false, true, null
 		);
-
+		
+		LOG.debug("Set report metadata");
 		dvHydroReport.setReportMetadata(createDvHydroMetadata(requestParameters, timeSeriesDescriptions,
 				primarySeriesDescription, primarySeriesDataResponse, requestingUser, primarySeriesGwParam, title));
 
+		LOG.debug("Get primary time series qualifiers");
 		dvHydroReport.setPrimarySeriesQualifiers(primarySeriesDataResponse.getQualifiers());
+		
+		LOG.debug("Get primary time series approvals");
 		dvHydroReport.setPrimarySeriesApprovals(primarySeriesDataResponse.getApprovals());
-
+		
+		LOG.debug("Get primary time series points");
 		if (primarySeriesDataResponse.getPoints() != null) {
 			dvHydroReport.setMaxMinData(TimeSeriesUtils.getMinMaxData(primarySeriesDataResponse.getPoints()));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getFirstStatDerivedIdentifier())) {
+			LOG.debug("Set first stat-derived time series data");
 			dvHydroReport.setFirstStatDerived(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getFirstStatDerivedIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getSecondStatDerivedIdentifier())) {
+			LOG.debug("Set second stat-derived time series data");
 			dvHydroReport.setSecondStatDerived(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getSecondStatDerivedIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getThirdStatDerivedIdentifier())) {
+			LOG.debug("Set their stat-derived time series data");
 			dvHydroReport.setThirdStatDerived(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getThirdStatDerivedIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getFourthStatDerivedIdentifier())) {
+			LOG.debug("Set fourth stat-derived time series data");
 			dvHydroReport.setFourthStatDerived(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getFourthStatDerivedIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getFirstReferenceIdentifier())) {
+			LOG.debug("Set first reference time series data");
 			dvHydroReport.setFirstReferenceTimeSeries(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getFirstReferenceIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getSecondReferenceIdentifier())) {
+			LOG.debug("Set second reference time series data");
 			dvHydroReport.setSecondReferenceTimeSeries(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getSecondReferenceIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getThirdReferenceIdentifier())) {
+			LOG.debug("Set third reference time series data");
 			dvHydroReport.setThirdReferenceTimeSeries(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getThirdReferenceIdentifier(), requestParameters, parameterMetadata));
 		}
 
 		if (StringUtils.isNotBlank(requestParameters.getComparisonTimeseriesIdentifier())) {
+			LOG.debug("Set comparison time series data");
 			dvHydroReport.setComparisonSeries(buildTimeSeriesCorrectedData(timeSeriesDescriptions,
 					requestParameters.getComparisonTimeseriesIdentifier(), requestParameters, parameterMetadata));
 		}
@@ -158,16 +180,19 @@ public class ReportBuilderService {
 
 		if (primarySeriesGwParam != null) {
 			if (!requestParameters.isExcludeDiscrete()) {
+				LOG.debug("Set gw level data from NWIS-RA");
 				dvHydroReport.setGwlevel(nwisRaService.getGwLevels(requestParameters,
 						dvHydroReport.getReportMetadata().getStationId(), primarySeriesGwParam, primarySeriesZoneOffset).getRecords());
 			}
 		} else if (DISCHARGE_PARAMETER.contentEquals(primarySeriesParameter)) {
+			LOG.debug("Set field visit measurements");
 			dvHydroReport.setFieldVisitMeasurements(getFieldVisitMeasurements(getFieldVisitData(requestParameters,
 					dvHydroReport.getReportMetadata().getStationId(), primarySeriesZoneOffset)));
 		} else if (!requestParameters.isExcludeDiscrete()) {
 			String unit = primarySeriesDescription.getUnit();
 			String nwisPcode = getNwisPcode(primarySeriesParameter, unit);
 			if (nwisPcode != null) {
+				LOG.debug("Set qw data from NWIS-RA");
 				dvHydroReport.setWaterQuality(nwisRaService.getQwData(requestParameters,
 						dvHydroReport.getReportMetadata().getStationId(), nwisPcode, primarySeriesZoneOffset));
 			}
@@ -195,7 +220,8 @@ public class ReportBuilderService {
 		}
 		return pcode;
 	}
-
+	
+	@LogExecutionTime
 	protected TimeSeriesCorrectedData buildTimeSeriesCorrectedData(
 			Map<String, TimeSeriesDescription> timeSeriesDescriptions, String timeSeriesIdentifier,
 			DvHydrographRequestParameters requestParameters, Map<String, ParameterMetadata> parameterMetadata) {
@@ -215,7 +241,8 @@ public class ReportBuilderService {
 
 		return timeSeriesCorrectedData;
 	}
-
+	
+	@LogExecutionTime
 	protected DvHydrographReportMetadata createDvHydroMetadata(DvHydrographRequestParameters requestParameters,
 			Map<String, TimeSeriesDescription> timeSeriesDescriptions,
 			TimeSeriesDescription primarySeriesDescription,
@@ -304,6 +331,7 @@ public class ReportBuilderService {
 	/**
 	 * This method should only be called if the timeSeriesDataServiceResponse is not null.
 	 */
+	@LogExecutionTime
 	protected TimeSeriesCorrectedData createTimeSeriesCorrectedData(
 			TimeSeriesDataServiceResponse timeSeriesDataServiceResponse, boolean isDaily, boolean isVolumetricFlow,
 			ZoneOffset zoneOffset) {
