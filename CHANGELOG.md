@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - log execution time of report
 - travis.yml for jacoco and coveralls reporting
 - jacoco and coveralls plugin to pom, excluding config and spring-specific classes from coveralls reporting
+- Merged Docker config into repo
 
 ### Changed
 - update framework version to 0.0.6-SNAPSHOT
