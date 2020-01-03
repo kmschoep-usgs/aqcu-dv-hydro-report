@@ -23,6 +23,7 @@ import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.Time
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.TimeSeriesDescription;
 import com.aquaticinformatics.aquarius.sdk.timeseries.servicemodels.Publish.TimeSeriesPoint;
 
+import gov.usgs.aqcu.model.DataGap;
 import gov.usgs.aqcu.model.DvHydrographPoint;
 import gov.usgs.aqcu.model.DvHydrographReport;
 import gov.usgs.aqcu.model.DvHydrographReportMetadata;
@@ -360,8 +361,13 @@ public class ReportBuilderService {
 		timeSeriesCorrectedData.setVolumetricFlow(isVolumetricFlow);
 
 		timeSeriesCorrectedData.setApprovals(timeSeriesDataServiceResponse.getApprovals());
-		timeSeriesCorrectedData.setGaps(
-				dataGapListBuilderService.buildGapList(timeSeriesDataServiceResponse.getPoints(), isDaily, zoneOffset));
+
+		List<DataGap> gaps = dataGapListBuilderService.buildGapList(timeSeriesDataServiceResponse.getPoints(), isDaily, zoneOffset);
+
+		if(!gaps.isEmpty()) {
+			timeSeriesCorrectedData.setGaps(gaps);
+		}
+		
 		timeSeriesCorrectedData.setGapTolerances(timeSeriesDataServiceResponse.getGapTolerances());
 
 		return timeSeriesCorrectedData;

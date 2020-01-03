@@ -1,6 +1,8 @@
 nwisRaServiceEndpoint: https://usgs.gov/nwisra
 javaToRServiceEndpoint: https://usgs.gov/javaToR
-
+security:
+  basic:
+    enabled: false
 aquarius:
   service:
     endpoint: https://usgs.gov/aquarius
