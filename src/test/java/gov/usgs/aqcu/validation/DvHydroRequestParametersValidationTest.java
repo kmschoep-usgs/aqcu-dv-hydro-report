@@ -1,7 +1,8 @@
 package gov.usgs.aqcu.validation;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.in;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -69,7 +70,7 @@ public class DvHydroRequestParametersValidationTest {
 				.stream()
 				.map(x -> String.join(":", x.getPropertyPath().toString(), x.getMessage()))
 				.collect(Collectors.toList());
-		assertThat(expected, isIn(actualStrings));
+		assertThat(expected, is(in(actualStrings)));
 	}
 
 }

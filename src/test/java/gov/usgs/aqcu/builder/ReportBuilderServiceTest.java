@@ -144,7 +144,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildReportNoNwisRaTest() {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
@@ -180,7 +179,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildGwExcludedReportTest() {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
@@ -220,7 +218,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildGwReportTest() {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
@@ -262,7 +259,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildWqExcludedReportTest() {
 		given(parameterListService.getParameterMetadata()).willReturn(getParameterMetadata());
 		given(timeSeriesDescriptionService.getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class)))
@@ -272,7 +268,7 @@ public class ReportBuilderServiceTest {
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
-		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
+		given(dataGapListBuilderService.buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class)))
 			.willReturn(getGapList());
 		given(qualifierLookupService.getByQualifierList(anyList())).willReturn(metadataMap);
 
@@ -290,7 +286,7 @@ public class ReportBuilderServiceTest {
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
 		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
-		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
+		verify(dataGapListBuilderService, times(1)).buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
 		verify(fieldVisitDataService, never()).get(anyString());
 		verify(fieldVisitDescriptionService, never()).getDescriptions(anyString(), any(ZoneOffset.class), any(DvHydrographRequestParameters.class));
@@ -302,7 +298,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildWqNoPcodeReportTest() {
 		ParameterRecord pcodeA = new ParameterRecord();
 		pcodeA.setName("nwisName");
@@ -320,7 +315,7 @@ public class ReportBuilderServiceTest {
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
-		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
+		given(dataGapListBuilderService.buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class)))
 			.willReturn(getGapList());
 		given(qualifierLookupService.getByQualifierList(anyList())).willReturn(metadataMap);
 		given(nwisRaService.getQwData(any(DvHydrographRequestParameters.class), anyString(), anyString(), any(ZoneOffset.class)))
@@ -342,7 +337,7 @@ public class ReportBuilderServiceTest {
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
 		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
-		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
+		verify(dataGapListBuilderService, times(1)).buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
 		verify(fieldVisitDataService, never()).get(anyString());
 		verify(fieldVisitDescriptionService, never()).getDescriptions(anyString(), any(ZoneOffset.class), any(DvHydrographRequestParameters.class));
@@ -354,7 +349,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildWqReportTest() {
 		ParameterRecord pcodeA = new ParameterRecord();
 		pcodeA.setName("nwisName");
@@ -372,7 +366,7 @@ public class ReportBuilderServiceTest {
 						getTimeSeriesDataServiceResponse(false, ZoneOffset.of("-4"), false));
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
-		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
+		given(dataGapListBuilderService.buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class)))
 			.willReturn(getGapList());
 		given(qualifierLookupService.getByQualifierList(anyList())).willReturn(metadataMap);
 		given(nwisRaService.getQwData(any(DvHydrographRequestParameters.class), anyString(), anyString(), any(ZoneOffset.class)))
@@ -394,7 +388,7 @@ public class ReportBuilderServiceTest {
 		verify(timeSeriesDescriptionService).getTimeSeriesDescriptions(any(DvHydrographRequestParameters.class));
 		verify(timeSeriesDataService, times(2)).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class), any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 		verify(locationDescriptionListService).getByLocationIdentifier(anyString());
-		verify(dataGapListBuilderService, times(1)).buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class));
+		verify(dataGapListBuilderService, times(1)).buildGapList(eq(null), any(boolean.class), any(ZoneOffset.class));
 		verify(qualifierLookupService).getByQualifierList(anyList());
 		verify(fieldVisitDataService, never()).get(anyString());
 		verify(fieldVisitDescriptionService, never()).getDescriptions(anyString(), any(ZoneOffset.class), any(DvHydrographRequestParameters.class));
@@ -413,22 +407,21 @@ public class ReportBuilderServiceTest {
 
 	@Test
 	public void buildTimeSeriesCorrectedDataNotFoundAqTest() {
-		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+		given(timeSeriesDataService.get(anyString(), eq(null), any(ZoneOffset.class),
 				any(boolean.class), any(boolean.class), any(boolean.class), eq(null))).willReturn(null);
 		Map<String, TimeSeriesDescription> descriptions = new HashMap<>();
 		descriptions.put("abc", new TimeSeriesDescription());
 		assertNull(service.buildTimeSeriesCorrectedData(descriptions, "abc", null, null));
-		verify(timeSeriesDataService).get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+		verify(timeSeriesDataService).get(anyString(), eq(null), any(ZoneOffset.class),
 		any(boolean.class), any(boolean.class), any(boolean.class), eq(null));
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void buildTimeSeriesCorrectedDataTest() {
 		boolean endOfPeriod = false;
 		ZoneOffset zoneOffset = ZoneOffset.UTC;
 
-		given(timeSeriesDataService.get(anyString(), any(DvHydrographRequestParameters.class), any(ZoneOffset.class),
+		given(timeSeriesDataService.get(anyString(), eq(null), any(ZoneOffset.class),
 		any(boolean.class), any(boolean.class), any(boolean.class), eq(null)))
 						.willReturn(getTimeSeriesDataServiceResponse(endOfPeriod, zoneOffset, true));
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
@@ -442,7 +435,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createDvHydroMetadataFirstTest() {
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
@@ -458,7 +450,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createDvHydroMetadataSecondTest() {
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
@@ -476,7 +467,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createDvHydroMetadataThirdTest() {
 		given(locationDescriptionListService.getByLocationIdentifier(anyString()))
 			.willReturn(new LocationDescription().setIdentifier("0010010000").setName("monitoringLocation"));
@@ -497,7 +487,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createTimeSeriesCorrectedDataSparseTest() {
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class))).willReturn(null);
 		TimeSeriesDataServiceResponse tsd = new TimeSeriesDataServiceResponse();
@@ -508,7 +497,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createTimeSeriesCorrectedDataTsUtcTest() {
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
 				.willReturn(getGapList());
@@ -523,7 +511,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createTimeSeriesCorrectedDataDvZ6Test() {
 		given(dataGapListBuilderService.buildGapList(anyList(), any(boolean.class), any(ZoneOffset.class)))
 		.willReturn(getGapList());
@@ -543,7 +530,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createDvHydroPointsDvUtcTest() {
 		List<DvHydrographPoint> actual = service.createDvHydroPoints(getTimeSeriesPoints(true, ZoneOffset.UTC), true,
 				ZoneOffset.UTC);
@@ -555,7 +541,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void createDvHydroPointsTsCtTest() {
 		boolean endOfPeriod = true;
 		ZoneOffset zoneOffset = ZoneOffset.of("-6");
@@ -575,7 +560,6 @@ public class ReportBuilderServiceTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void getEstimatedPeriodsTest() {
 		List<InstantRange> actual = service.getEstimatedPeriods(getQualifiers());
 		assertEquals(5, actual.size());
@@ -699,6 +683,7 @@ public class ReportBuilderServiceTest {
 	protected TimeSeriesDescription buildPrimarySeriesDescription() {
 		return new TimeSeriesDescription()
 				.setIdentifier("primaryIdentifier")
+				.setLocationIdentifier("location")
 				.setUtcOffset(Double.valueOf(-4))
 				.setParameter("Discharge");
 	}
