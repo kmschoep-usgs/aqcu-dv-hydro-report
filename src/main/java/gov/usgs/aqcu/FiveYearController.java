@@ -47,9 +47,9 @@ public class FiveYearController {
 	}
 
 	@GetMapping(value="/rawData", produces={MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<DvHydrographReport> getReportRawData(@Validated FiveYearRequestParameters requestParameters) {
+	public ResponseEntity<String> getReportRawData(@Validated FiveYearRequestParameters requestParameters) {
 		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, getRequestingUser(), "Five Year GW Summary");
-		return new ResponseEntity<DvHydrographReport>(report, new HttpHeaders(), HttpStatus.OK);
+		return new ResponseEntity<String>(gson.toJson(report), new HttpHeaders(), HttpStatus.OK);
 	}
 
 	String getRequestingUser() {

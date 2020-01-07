@@ -47,9 +47,9 @@ public class DVHydroController {
 	}
 
 	@GetMapping(value="/rawData", produces={MediaType.APPLICATION_JSON_VALUE})
-	public ResponseEntity<DvHydrographReport> getReportRawData(@Validated DvHydrographRequestParameters requestParameters) {
+	public ResponseEntity<String> getReportRawData(@Validated DvHydrographRequestParameters requestParameters) {
 		DvHydrographReport report = reportBuilderService.buildReport(requestParameters, getRequestingUser(), "DV Hydrograph");
-		return new ResponseEntity<DvHydrographReport>(report, new HttpHeaders(), HttpStatus.OK);
+		return new ResponseEntity<String>(gson.toJson(report), new HttpHeaders(), HttpStatus.OK);
 	}
 
 	String getRequestingUser() {
