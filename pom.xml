@@ -3,35 +3,21 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>gov.usgs.aqcu</groupId>
     <artifactId>aqcu-dv-hydro-report</artifactId>
-    <version>0.0.7-SNAPSHOT</version>
+    <!-- Static version that does not change. Versioning handled by Docker image.-->
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
-        <cida.maven.url>https://internal.cida.usgs.gov/maven/content/repositories</cida.maven.url>
-        <wma.artifactory.url>https://cida.usgs.gov/artifactory</wma.artifactory.url>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <additionalparam>-Xdoclint:none</additionalparam>
         <failOnMissingWebXml>false</failOnMissingWebXml>
         <springfox.version>2.8.0</springfox.version>
-        <aqcu.framework.version>0.0.8-SNAPSHOT</aqcu.framework.version>
-        <spring.boot.version>2.2.2.RELEASE</spring.boot.version>
+        <aqcu.framework.version>0.0.8</aqcu.framework.version>
+        <spring.boot.version>2.2.4.RELEASE</spring.boot.version>
         <owasp.dependency.check.version>5.2.4</owasp.dependency.check.version>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>release</id>
-            <name>cidasdpdasartip.cr.usgs.gov-releases</name>
-            <url>${wma.artifactory.url}/aqcu-maven-releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>cidasdpdasartip.cr.usgs.gov-snapshots</name>
-            <url>${wma.artifactory.url}/aqcu-maven-snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <parent>
         <groupId>gov.usgs.water</groupId>
@@ -47,8 +33,8 @@
         </repository>
         <repository>
             <id>aqcu-maven-centralized</id>
-            <name>AQCU Maven Centralized (Artifactor)</name>
-            <url>https://cida.usgs.gov/artifactory/aqcu-maven-centralized/</url>
+            <name>AQCU Maven Centralized (Artifactory)</name>
+            <url>https://cida.usgs.gov/artifactory/aqcu-maven-centralized</url>
         </repository>
     </repositories>
 
@@ -57,7 +43,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
-                <version>Greenwich.SR3</version>
+                <version>Greenwich.SR5</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
